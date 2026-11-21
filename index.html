@@ -42,18 +42,6 @@
       </button>
     </nav>
 
-    <div class="profile-wrap">
-      <button class="profile-button" id="profileButton" aria-label="Mở tài khoản">
-        <span class="avatar">MA</span>
-        <span class="profile-name">Minh Anh</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
-      </button>
-      <div class="profile-menu" id="profileMenu">
-        <button data-page="account">Tài khoản của tôi</button>
-        <button>Tiến độ học tập</button>
-        <button>Đăng xuất</button>
-      </div>
-    </div>
   </header>
 
   <main>
@@ -61,7 +49,7 @@
       <div class="hero">
         <div class="hero-copy">
           <span class="eyebrow">Hành trình học tập của bạn</span>
-          <h1>Chào Minh Anh! <span aria-hidden="true">👋</span></h1>
+          <h1>Chào <span id="heroName">bạn</span>! <span aria-hidden="true">👋</span></h1>
           <p>Hôm nay, hãy dành 15 phút để khám phá điều thú vị mới nhé.</p>
           <button class="primary-button" data-page="lessons">
             Tiếp tục học
@@ -122,9 +110,9 @@
       </div>
       <div class="filter-chips" id="filterChips">
         <button class="active" data-filter="all">Tất cả</button>
-        <button data-filter="math">Toán học</button>
-        <button data-filter="science">Khoa học</button>
-        <button data-filter="english">Tiếng Anh</button>
+        <button data-filter="lesson1">Bài 1</button>
+        <button data-filter="lesson2">Bài 2</button>
+        <button data-filter="lesson3">Bài 3</button>
       </div>
       <div class="library-layout">
         <div class="lesson-list" id="allLessons"></div>
@@ -141,9 +129,9 @@
     <section class="page" id="accountPage">
       <div class="account-layout">
         <aside class="account-sidebar">
-          <div class="account-avatar">MA<span></span></div>
-          <h2>Minh Anh</h2>
-          <p>Lớp 6 • Học viên tích cực</p>
+          <div class="account-avatar" id="accountAvatar"><span></span></div>
+          <h2 id="accountName"></h2>
+          <p id="accountSchool"></p>
           <nav>
             <button class="active">Thông tin cá nhân</button>
             <button>Thành tích</button>
@@ -153,10 +141,11 @@
         <section class="account-content">
           <div class="section-heading"><div><span class="section-kicker">Hồ sơ học tập</span><h2>Thông tin tài khoản</h2></div></div>
           <div class="info-grid">
-            <label>Họ và tên<input value="Nguyễn Minh Anh" readonly></label>
-            <label>Email<input value="minhanh@example.com" readonly></label>
-            <label>Khối lớp<input value="Lớp 6" readonly></label>
-            <label>Ngày tham gia<input value="12/01/2026" readonly></label>
+            <label>Họ và tên<input id="fullNameInput" value="" placeholder="Nhập họ và tên"></label>
+            <label>Trường<input id="schoolInput" value="" placeholder="Nhập tên trường"></label>
+            <label>Email<input id="emailInput" value="" type="email" placeholder="Nhập email"></label>
+            <label>Khối lớp<input id="classInput" value="" placeholder="Ví dụ: Lớp 10"></label>
+            <label>Ngày tham gia<input id="joinedInput" value="" placeholder="Ví dụ: 21/11/2026"></label>
           </div>
           <div class="achievement-strip">
             <div><span>🔥</span><p><strong>7</strong><small>Ngày liên tiếp</small></p></div>
@@ -175,9 +164,29 @@
   </nav>
 
   <div class="welcome-toast" id="welcomeToast">
-    <div class="toast-avatar">MA</div>
-    <div><strong>Xin chào, Minh Anh!</strong><span>Chúc bạn có một ngày học hiệu quả 🎉</span></div>
+    <div class="toast-avatar" id="toastAvatar">HV</div>
+    <div><strong id="toastName">Xin chào!</strong><span>Chúc bạn học tốt Vật Lí 10 🎉</span></div>
     <button id="closeWelcome" aria-label="Đóng">×</button>
+  </div>
+
+  <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+    <div class="profile-modal-backdrop"></div>
+    <div class="profile-modal-panel">
+      <div class="profile-modal-icon">⚛️</div>
+      <span class="section-kicker">Thiết lập tài khoản</span>
+      <h2 id="profileModalTitle">Chào mừng đến với Vật Lí 10</h2>
+      <p>Nhập thông tin để bắt đầu hành trình học tập.</p>
+      <form id="profileForm">
+        <label>Tên của bạn
+          <input id="profileNameInput" type="text" placeholder="Ví dụ: Nguyễn An" required>
+        </label>
+        <label>Trường
+          <input id="profileSchoolInput" type="text" placeholder="Ví dụ: THPT Nguyễn Huệ" required>
+        </label>
+        <p class="profile-error" id="profileError"></p>
+        <button class="primary-button" type="submit">Bắt đầu học</button>
+      </form>
+    </div>
   </div>
 
   <div class="quiz-modal" id="quizModal" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
@@ -185,7 +194,7 @@
     <div class="quiz-panel">
       <button class="quiz-close" id="quizClose" aria-label="Đóng">×</button>
       <div class="quiz-header">
-        <span class="quiz-badge" id="quizSubject">Toán học</span>
+        <span class="quiz-badge" id="quizSubject">Vật Lí 10</span>
         <div class="quiz-progress"><span id="quizProgress"></span></div>
       </div>
       <div class="quiz-content">
