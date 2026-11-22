@@ -3,218 +3,258 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EduVibe - Học vui mỗi ngày</title>
+  <meta name="theme-color" content="#f8faff">
+  <meta name="description" content="Khám phá Vật lí THPT qua bài học gần gũi, mô phỏng tương tác và câu hỏi có giải thích.">
+  <title>EduVibe — Khám phá Vật lí</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="moomoo.css">
+  <script src="lessons.js" defer></script>
+  <script src="question-bank.js" defer></script>
+  <script src="script.js" defer></script>
+  <script src="moomoo.js" defer></script>
 </head>
 <body>
-  <div class="page-loader" id="pageLoader" aria-label="Đang tải">
-    <div class="loader-mark">
-      <div class="apple-loader" aria-hidden="true">
-        <span class="apple-bite bite-one"></span>
-        <span class="apple-bite bite-two"></span>
-        <span class="apple-bite bite-three"></span>
-      </div>
-      <div class="loader-dots"><span></span><span></span><span></span></div>
-    </div>
-  </div>
-
   <header class="topbar">
-    <a class="brand" href="#" data-page="home" aria-label="EduVibe trang chủ">
-      <span class="brand-mark"><span>e</span></span>
+    <a class="brand" href="#home" data-page="home" aria-label="EduVibe — Trang chủ">
+      <span class="brand-mark" aria-hidden="true">∿</span>
       <span>Edu<span>Vibe</span></span>
     </a>
-
     <nav class="desktop-nav" aria-label="Điều hướng chính">
-      <button class="nav-link active" data-page="home">
+      <button class="nav-link active" type="button" data-page="home">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v9h13v-9M9.5 19v-5h5v5"/></svg>
         Trang chủ
       </button>
-      <button class="nav-link" data-page="lessons">
+      <button class="nav-link" type="button" data-page="lessons">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16ZM4 18.5A2.5 2.5 0 0 1 6.5 16H20"/></svg>
-        Bài học
+        Khám phá
       </button>
-      <button class="nav-link" data-page="account">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>
-        Tài khoản
+      <button class="nav-link" type="button" data-page="progress">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/></svg>
+        Tiến độ
       </button>
     </nav>
-
+    <div class="account-controls" id="accountControls">
+      <button class="auth-trigger auth-login-trigger" type="button" data-open-auth="login">Đăng nhập</button>
+      <button class="auth-trigger auth-register-trigger" type="button" data-open-auth="register">Đăng ký</button>
+    </div>
+    <div class="account-menu" id="accountMenu" hidden>
+      <span class="account-avatar" id="accountAvatar" aria-hidden="true"></span>
+      <span class="account-name" id="accountName"></span>
+      <button class="auth-trigger auth-logout-trigger" type="button" data-auth-logout>Đăng xuất</button>
+    </div>
   </header>
 
   <main>
-    <section class="page active" id="homePage">
-      <div class="hero">
+    <section class="page active" id="homePage" aria-labelledby="homeTitle">
+      <section class="hero">
         <div class="hero-copy">
-          <span class="eyebrow">Hành trình học tập của bạn</span>
-          <h1>Chào <span id="heroName">bạn</span>! <span aria-hidden="true">👋</span></h1>
-          <p>Hôm nay, hãy dành 15 phút để khám phá điều thú vị mới nhé.</p>
-          <button class="primary-button" data-page="lessons">
-            Tiếp tục học
+          <span class="eyebrow">Vật lí quanh ta</span>
+          <h1 id="homeTitle">Hiểu thế giới,<br>từng quy luật một.</h1>
+          <p>Khám phá cách mọi thứ chuyển động, phát sáng và tương tác — bắt đầu từ những điều bạn gặp mỗi ngày.</p>
+          <button class="primary-button" type="button" data-page="lessons">
+            Bắt đầu khám phá
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </button>
         </div>
-
-        <div class="hero-progress-card">
-          <div class="progress-ring" style="--progress: 68">
-            <div class="ring-inner">
-              <strong>68%</strong>
-              <span>hoàn thành</span>
-            </div>
+        <div class="hero-progress-card" aria-label="Tiến độ học tập">
+          <div class="progress-ring" id="homeProgressRing" style="--progress: 0">
+            <div class="ring-inner"><strong id="homeProgressPercent">0%</strong><span>bài học</span></div>
           </div>
           <div class="hero-stats">
-            <div><span class="stat-icon purple">🔥</span><p><strong>7 ngày</strong><small>Chuỗi học tập</small></p></div>
-            <div><span class="stat-icon blue">⭐</span><p><strong>1.240 XP</strong><small>Tổng điểm XP</small></p></div>
+            <div><span class="stat-icon purple" aria-hidden="true">✓</span><p><strong id="homeCompletedCount">0/3</strong><small>Bài học hoàn thành</small></p></div>
+            <div><span class="stat-icon blue" aria-hidden="true">⚛</span><p><strong id="homeLessonTotal">3 bài học</strong><small>Vật lí lớp 10</small></p></div>
           </div>
         </div>
+        <div class="hero-decoration deco-one" aria-hidden="true"></div>
+        <div class="hero-decoration deco-two" aria-hidden="true"></div>
+      </section>
 
-        <div class="hero-decoration deco-one"></div>
-        <div class="hero-decoration deco-two"></div>
-      </div>
-
-      <section class="continue-section">
+      <section class="continue-section" aria-labelledby="recentTitle">
         <div class="section-heading">
-          <div>
-            <span class="section-kicker">Tiếp tục khám phá</span>
-            <h2>Bài học gần đây</h2>
-          </div>
-          <button class="text-button" data-page="lessons">Xem tất cả <span>→</span></button>
+          <div><span class="section-kicker">Lối vào nhanh</span><h2 id="recentTitle">Tiếp tục khám phá</h2></div>
+          <button class="text-button" type="button" data-page="lessons">Tất cả chủ đề <span aria-hidden="true">→</span></button>
         </div>
-
         <div class="lesson-grid" id="recentLessons"></div>
       </section>
 
-      <section class="learning-path">
+      <section class="learning-path" aria-labelledby="pathTitle">
         <div class="section-heading">
-          <div>
-            <span class="section-kicker">Lộ trình của bạn</span>
-            <h2>Các chương học</h2>
-          </div>
+          <div><span class="section-kicker">Học từ hiện tượng đến quy luật</span><h2 id="pathTitle">Bản đồ Vật lí</h2></div>
         </div>
         <div class="chapters" id="chapterPreview"></div>
       </section>
     </section>
 
-    <section class="page" id="lessonsPage">
+    <section class="page" id="lessonsPage" aria-labelledby="lessonsTitle">
       <div class="library-header">
-        <div>
-          <span class="section-kicker">Thư viện bài học</span>
-          <h1>Chọn bài học bạn yêu thích</h1>
-        </div>
-        <div class="search-box">
+        <div><span class="section-kicker">Thư viện kiến thức</span><h1 id="lessonsTitle">Chọn điều muốn khám phá</h1></div>
+        <label class="search-box">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
-          <input id="lessonSearch" type="search" placeholder="Tìm bài học..." aria-label="Tìm bài học">
-        </div>
+          <span class="visually-hidden">Tìm kiếm bài học</span>
+          <input id="lessonSearch" type="search" placeholder="Tìm chủ đề..." autocomplete="off">
+        </label>
       </div>
-      <div class="filter-chips" id="filterChips">
-        <button class="active" data-filter="all">Tất cả</button>
-        <button data-filter="lesson1">Bài 1</button>
-        <button data-filter="lesson2">Bài 2</button>
-        <button data-filter="lesson3">Bài 3</button>
-      </div>
+      <div class="filter-row" id="topicFilters" role="group" aria-label="Lọc theo lĩnh vực"></div>
       <div class="library-layout">
-        <div class="lesson-list" id="allLessons"></div>
-        <aside class="daily-card">
-          <div class="daily-icon">🎯</div>
-          <span>Mục tiêu hôm nay</span>
-          <strong>Hoàn thành 2 bài</strong>
-          <div class="daily-progress"><span></span></div>
-          <p>Đã hoàn thành <b>1/2</b> bài</p>
+        <div class="lesson-list" id="allLessons" aria-live="polite"></div>
+        <aside class="daily-card" aria-label="Tổng quan tiến độ">
+          <div class="daily-icon" aria-hidden="true">🧭</div>
+          <span>Hành trình học tập</span>
+          <strong id="libraryProgressTitle">Bắt đầu từ một chủ đề</strong>
+          <div class="daily-progress"><span id="libraryProgressBar"></span></div>
+          <p id="libraryProgressText">0 trên 3 bài học hoàn thành</p>
+          <button class="text-button" type="button" data-page="progress">Xem tiến độ <span aria-hidden="true">→</span></button>
         </aside>
       </div>
     </section>
 
-    <section class="page" id="accountPage">
-      <div class="account-layout">
-        <aside class="account-sidebar">
-          <div class="account-avatar" id="accountAvatar"><span></span></div>
-          <h2 id="accountName"></h2>
-          <p id="accountSchool"></p>
-          <nav>
-            <button class="active">Thông tin cá nhân</button>
-            <button>Thành tích</button>
-            <button>Tiến độ học tập</button>
-          </nav>
-        </aside>
-        <section class="account-content">
-          <div class="section-heading"><div><span class="section-kicker">Hồ sơ học tập</span><h2>Thông tin tài khoản</h2></div></div>
-          <div class="info-grid">
-            <label>Họ và tên<input id="fullNameInput" value="" placeholder="Nhập họ và tên"></label>
-            <label>Trường<input id="schoolInput" value="" placeholder="Nhập tên trường"></label>
-            <label>Email<input id="emailInput" value="" type="email" placeholder="Nhập email"></label>
-            <label>Khối lớp<input id="classInput" value="" placeholder="Ví dụ: Lớp 10"></label>
-            <label>Ngày tham gia<input id="joinedInput" value="" placeholder="Ví dụ: 21/11/2026"></label>
-          </div>
-          <div class="achievement-strip">
-            <div><span>🔥</span><p><strong>7</strong><small>Ngày liên tiếp</small></p></div>
-            <div><span>⭐</span><p><strong>1.240</strong><small>Điểm XP</small></p></div>
-            <div><span>🏆</span><p><strong>12</strong><small>Huy hiệu</small></p></div>
-          </div>
-        </section>
+    <section class="page" id="lessonPage" aria-labelledby="lessonHeading">
+      <button class="back-button" type="button" data-back-to="lessons">← <span>Quay lại thư viện</span></button>
+      <article id="lessonDetail"></article>
+    </section>
+
+    <section class="page" id="progressPage" aria-labelledby="progressTitle">
+      <div class="progress-page-header">
+        <span class="section-kicker">Tiến trình của bạn</span>
+        <h1 id="progressTitle">Mỗi khám phá đều là một bước tiến.</h1>
+        <p>Tiến độ được lưu trên thiết bị này.</p>
       </div>
+      <div id="progressSummary"></div>
+      <div class="section-heading progress-list-heading">
+        <div><span class="section-kicker">Lộ trình học</span><h2>Các chủ đề Vật lí</h2></div>
+      </div>
+      <div class="progress-list" id="progressLessons"></div>
     </section>
   </main>
 
   <nav class="mobile-nav" aria-label="Điều hướng di động">
-    <button class="active" data-page="home"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v9h13v-9"/></svg><span>Trang chủ</span></button>
-    <button data-page="lessons"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"/></svg><span>Bài học</span></button>
-    <button data-page="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg><span>Tài khoản</span></button>
+    <button class="active" type="button" data-page="home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v9h13v-9"/></svg><span>Trang chủ</span>
+    </button>
+    <button type="button" data-page="lessons">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"/></svg><span>Khám phá</span>
+    </button>
+    <button type="button" data-page="progress">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/></svg><span>Tiến độ</span>
+    </button>
   </nav>
-
-  <div class="welcome-toast" id="welcomeToast">
-    <div class="toast-avatar" id="toastAvatar">HV</div>
-    <div><strong id="toastName">Xin chào!</strong><span>Chúc bạn học tốt Vật Lí 10 🎉</span></div>
-    <button id="closeWelcome" aria-label="Đóng">×</button>
-  </div>
-
-  <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
-    <div class="profile-modal-backdrop"></div>
-    <div class="profile-modal-panel">
-      <div class="profile-modal-icon">⚛️</div>
-      <span class="section-kicker">Thiết lập tài khoản</span>
-      <h2 id="profileModalTitle">Chào mừng đến với Vật Lí 10</h2>
-      <p>Nhập thông tin để bắt đầu hành trình học tập.</p>
-      <form id="profileForm">
-        <label>Tên của bạn
-          <input id="profileNameInput" type="text" placeholder="Ví dụ: Nguyễn An" required>
-        </label>
-        <label>Trường
-          <input id="profileSchoolInput" type="text" placeholder="Ví dụ: THPT Nguyễn Huệ" required>
-        </label>
-        <p class="profile-error" id="profileError"></p>
-        <button class="primary-button" type="submit">Bắt đầu học</button>
-      </form>
+  <dialog class="auth-dialog" id="authDialog" aria-labelledby="authDialogTitle">
+    <div class="auth-dialog-header">
+      <a class="brand" href="#home" data-auth-home aria-label="EduVibe — Trang chủ">
+        <span class="brand-mark" aria-hidden="true">∿</span>
+        <span>Edu<span>Vibe</span></span>
+      </a>
+      <button class="auth-close" type="button" data-close-auth aria-label="Đóng cửa sổ">×</button>
     </div>
-  </div>
-
-  <div class="quiz-modal" id="quizModal" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
-    <div class="quiz-backdrop"></div>
-    <div class="quiz-panel">
-      <button class="quiz-close" id="quizClose" aria-label="Đóng">×</button>
-      <div class="quiz-header">
-        <span class="quiz-badge" id="quizSubject">Vật Lí 10</span>
-        <div class="quiz-progress"><span id="quizProgress"></span></div>
-      </div>
-      <div class="quiz-content">
-        <span class="question-number" id="questionNumber">Câu 1/3</span>
-        <h2 id="quizTitle">Tìm giá trị của x</h2>
-        <div class="example-box" id="exampleBox">
-          <strong>Ví dụ minh họa</strong>
-          <p>Khi a + b = c, ta có thể suy ra b = c - a.</p>
-        </div>
-        <div class="answers" id="answers"></div>
-        <div class="answer-feedback" id="answerFeedback"></div>
-      </div>
-      <div class="quiz-footer">
-        <button class="secondary-button" id="skipButton">Để sau</button>
-        <button class="primary-button" id="checkAnswer">Kiểm tra đáp án</button>
-      </div>
+    <div class="auth-dialog-intro">
+      <span class="section-kicker">Không gian học tập của bạn</span>
+      <h2 id="authDialogTitle">Chào mừng trở lại</h2>
+      <p>Đăng nhập để tiếp tục hành trình khám phá Vật lí.</p>
     </div>
-  </div>
-
-  <div class="confetti" id="confetti" aria-hidden="true"></div>
-  <script src="script.js"></script>
+    <div class="auth-view-switch" role="group" aria-label="Chọn đăng nhập hoặc đăng ký">
+      <button class="active" type="button" data-auth-view="login" aria-pressed="true">Đăng nhập</button>
+      <button type="button" data-auth-view="register" aria-pressed="false">Đăng ký</button>
+    </div>
+    <form class="auth-form" id="loginForm" novalidate>
+      <label>Email
+        <input id="loginEmail" name="email" type="email" autocomplete="username" maxlength="254" required>
+      </label>
+      <label>Mật khẩu
+        <span class="password-input">
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" data-password-toggle="loginPassword" aria-controls="loginPassword" aria-pressed="false">Hiện</button>
+        </span>
+      </label>
+      <p class="auth-message" id="loginMessage" role="status" aria-live="polite"></p>
+      <button class="primary-button auth-submit" type="submit">Đăng nhập</button>
+    </form>
+    <form class="auth-form" id="registerForm" hidden novalidate>
+      <label>Tên hiển thị
+        <input id="registerName" name="displayName" type="text" autocomplete="name" maxlength="60" required>
+      </label>
+      <label>Email
+        <input id="registerEmail" name="email" type="email" autocomplete="email" maxlength="254" required>
+      </label>
+      <label>Mật khẩu <span class="auth-hint">(ít nhất 8 ký tự)</span>
+        <span class="password-input">
+          <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="8" required>
+          <button type="button" data-password-toggle="registerPassword" aria-controls="registerPassword" aria-pressed="false">Hiện</button>
+        </span>
+      </label>
+      <label>Xác nhận mật khẩu
+        <span class="password-input">
+          <input id="registerPasswordConfirm" name="passwordConfirm" type="password" autocomplete="new-password" minlength="8" required>
+          <button type="button" data-password-toggle="registerPasswordConfirm" aria-controls="registerPasswordConfirm" aria-pressed="false">Hiện</button>
+        </span>
+      </label>
+      <p class="auth-message" id="registerMessage" role="status" aria-live="polite"></p>
+      <button class="primary-button auth-submit" type="submit">Tạo tài khoản</button>
+    </form>
+    <p class="auth-local-note">Bản demo lưu tài khoản trong trình duyệt này; chưa phải xác thực dùng cho website công khai.</p>
+  </dialog>
+  <button class="moomoo-launcher" id="moomooLauncher" type="button" aria-label="MooMoo – Hỏi tớ bất cứ điều gì nhé!" aria-controls="moomooPanel" aria-expanded="false">
+    <svg class="moomoo-cow" viewBox="0 0 100 100" aria-hidden="true">
+      <path class="cow-ear" d="M25 35C14 26 7 28 8 37c1 8 10 12 20 10M75 35c11-9 18-7 17 2-1 8-10 12-20 10"/>
+      <path class="cow-horn" d="m31 25 3-12c1-5 8-5 9 0l2 11m14 0 2-12c1-5 8-5 9 0l3 12"/>
+      <path class="cow-head" d="M22 34c0-14 12-22 28-22s28 8 28 22v31c0 20-12 29-28 29S22 85 22 65z"/>
+      <path class="cow-spot" d="M26 38c2-9 9-13 18-12 1 8-3 15-11 17-3 1-6-1-7-5zm36-11c8-5 15-1 16 8-1 7-6 10-13 7-5-3-7-10-3-15z"/>
+      <ellipse class="cow-eye" cx="39" cy="52" rx="3.3" ry="4.3"/>
+      <ellipse class="cow-eye" cx="61" cy="52" rx="3.3" ry="4.3"/>
+      <path class="cow-muzzle" d="M32 68c0-9 8-14 18-14s18 5 18 14-8 15-18 15-18-6-18-15z"/>
+      <ellipse class="cow-nostril" cx="43" cy="68" rx="2.2" ry="3"/>
+      <ellipse class="cow-nostril" cx="57" cy="68" rx="2.2" ry="3"/>
+      <path class="cow-smile" d="M43 77c4 3 10 3 14 0"/>
+      <path class="cow-cheek" d="M27 63c3-3 7-3 10-1m26 0c3-2 7-2 10 1"/>
+    </svg>
+    <span class="moomoo-notification" aria-hidden="true"></span>
+  </button>
+  <section class="moomoo-panel" id="moomooPanel" role="dialog" aria-labelledby="moomooTitle" aria-modal="false" hidden>
+    <header class="moomoo-header">
+      <span class="moomoo-header-avatar" aria-hidden="true">
+        <svg class="moomoo-cow" viewBox="0 0 100 100">
+          <path class="cow-ear" d="M25 35C14 26 7 28 8 37c1 8 10 12 20 10M75 35c11-9 18-7 17 2-1 8-10 12-20 10"/>
+          <path class="cow-horn" d="m31 25 3-12c1-5 8-5 9 0l2 11m14 0 2-12c1-5 8-5 9 0l3 12"/>
+          <path class="cow-head" d="M22 34c0-14 12-22 28-22s28 8 28 22v31c0 20-12 29-28 29S22 85 22 65z"/>
+          <path class="cow-spot" d="M26 38c2-9 9-13 18-12 1 8-3 15-11 17-3 1-6-1-7-5zm36-11c8-5 15-1 16 8-1 7-6 10-13 7-5-3-7-10-3-15z"/>
+          <ellipse class="cow-eye" cx="39" cy="52" rx="3.3" ry="4.3"/>
+          <ellipse class="cow-eye" cx="61" cy="52" rx="3.3" ry="4.3"/>
+          <path class="cow-muzzle" d="M32 68c0-9 8-14 18-14s18 5 18 14-8 15-18 15-18-6-18-15z"/>
+          <ellipse class="cow-nostril" cx="43" cy="68" rx="2.2" ry="3"/>
+          <ellipse class="cow-nostril" cx="57" cy="68" rx="2.2" ry="3"/>
+          <path class="cow-smile" d="M43 77c4 3 10 3 14 0"/>
+          <path class="cow-cheek" d="M27 63c3-3 7-3 10-1m26 0c3-2 7-2 10 1"/>
+        </svg>
+      </span>
+      <span class="moomoo-heading">
+        <strong id="moomooTitle">MooMoo</strong>
+        <small>Trợ lý học tập của bạn</small>
+      </span>
+      <button class="moomoo-icon-button" type="button" data-moomoo-clear aria-label="Bắt đầu cuộc trò chuyện mới" title="Cuộc trò chuyện mới">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
+      </button>
+      <button class="moomoo-icon-button" type="button" data-moomoo-close aria-label="Đóng MooMoo">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </header>
+    <div class="moomoo-messages" id="moomooMessages" role="log" aria-label="Lịch sử trò chuyện" aria-live="polite" aria-relevant="additions text"></div>
+    <div class="moomoo-suggestions" id="moomooSuggestions" aria-label="Gợi ý câu hỏi"></div>
+    <div class="moomoo-typing" id="moomooTyping" aria-live="polite" hidden>
+      <span class="moomoo-small-avatar" aria-hidden="true">🐮</span>
+      <span>MooMoo đang suy nghĩ</span><i></i><i></i><i></i>
+    </div>
+    <p class="moomoo-status" id="moomooStatus" role="status" aria-live="polite"></p>
+    <form class="moomoo-composer" id="moomooForm">
+      <label class="visually-hidden" for="moomooInput">Nhập câu hỏi cho MooMoo</label>
+      <textarea id="moomooInput" rows="1" maxlength="2000" placeholder="Hỏi MooMoo điều cậu đang thắc mắc..." required></textarea>
+      <button class="moomoo-send" type="submit" aria-label="Gửi tin nhắn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-7-8-1zm8 1 8-9"/></svg>
+      </button>
+    </form>
+    <p class="moomoo-privacy">Đừng gửi thông tin cá nhân nhạy cảm. Lịch sử chat được lưu trên thiết bị này.</p>
+  </section>
+  <div class="app-notice" id="appNotice" role="status" aria-live="polite"></div>
 </body>
 </html>
