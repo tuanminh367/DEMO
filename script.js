@@ -5,6 +5,8 @@ const ACCOUNTS_STORAGE_KEY = "eduvibePhysicsAccounts";
 const AUTH_SESSION_KEY = "eduvibePhysicsSession";
 const PASSWORD_HASH_ITERATIONS = 210000;
 const AUTH_CRYPTO_ERROR = "Mã hóa mật khẩu không khả dụng trong trình duyệt này.";
+const QUIZ_DURATION_SECONDS = 20 * 60;
+const QUIZ_MAX_SCORE = 10;
 const PAGE_IDS = {
   home: "homePage",
   lessons: "lessonsPage",
@@ -35,13 +37,18 @@ physicsLessons.forEach(lesson => {
   }
 });
 const categories = ["Tất cả", ...new Set(physicsLessons.map(lesson => lesson.category))];
-const emptyProgress = () => ({ completed: [], bestScores: {}, recent: [] });
+const emptyProgress = () => ({ completed: [], bestScores: {}, recent: [], scoreScale: QUIZ_MAX_SCORE });
 let progress = loadProgress();
 let activeFilter = "Tất cả";
 let currentAccount = null;
 let currentLesson = null;
 let quizAnswers = { multipleChoice: [], trueFalse: [], shortAnswer: [] };
 let quizScore = null;
+let quizStarted = false;
+let quizTimedOut = false;
+let quizTimeRemaining = QUIZ_DURATION_SECONDS;
+let quizDeadline = null;
+let quizTimerInterval = null;
 let motionFrame = null;
 let motionStartTimestamp = null;
 let noticeTimer = null;
@@ -259,18 +266,27 @@ function loadProgress() {
     if (!saved) return emptyProgress();
     const parsed = JSON.parse(saved);
     if (!parsed || !Array.isArray(parsed.completed) || !Array.isArray(parsed.recent) ||
-        typeof parsed.bestScores !== "object" || parsed.bestScores === null) {
+        typeof parsed.bestScores !== "object" || parsed.bestScores === null ||
+        Array.isArray(parsed.bestScores)) {
       throw new Error("Dữ liệu tiến độ không đúng định dạng.");
     }
+    const validLessonIds = new Set(physicsLessons.map(lesson => lesson.id));
+    const storedScoreScale = parsed.scoreScale === QUIZ_MAX_SCORE ? QUIZ_MAX_SCORE : 20;
+    const bestScores = Object.keys(parsed.bestScores)
+      .filter(id => validLessonIds.has(id))
+      .reduce((scores, id) => {
+        const score = parsed.bestScores[id];
+        if (typeof score === "number" && Number.isFinite(score) && score >= 0) {
+          const scoreOnTen = storedScoreScale === QUIZ_MAX_SCORE ? score : score / 2;
+          scores[id] = Math.min(QUIZ_MAX_SCORE, Math.round(scoreOnTen * 10) / 10);
+        }
+        return scores;
+      }, {});
     return {
-      completed: parsed.completed.filter(id => physicsLessons.some(lesson => lesson.id === id)),
-      bestScores: Object.keys(parsed.bestScores)
-        .filter(id => physicsLessons.some(lesson => lesson.id === id))
-        .reduce((scores, id) => {
-          scores[id] = parsed.bestScores[id];
-          return scores;
-        }, {}),
-      recent: parsed.recent.filter(id => physicsLessons.some(lesson => lesson.id === id)).slice(0, 5)
+      completed: [...new Set(parsed.completed.filter(id => validLessonIds.has(id)))],
+      bestScores,
+      recent: [...new Set(parsed.recent.filter(id => validLessonIds.has(id)))].slice(0, 5),
+      scoreScale: QUIZ_MAX_SCORE
     };
   } catch (error) {
     console.error("Không thể đọc tiến độ đã lưu.", error);
@@ -452,6 +468,11 @@ function initializeAuth() {
     }
   } catch (error) {
     currentAccount = null;
+    try {
+      localStorage.removeItem(AUTH_SESSION_KEY);
+    } catch (cleanupError) {
+      console.error("Không thể xóa trạng thái đăng nhập không hợp lệ.", cleanupError);
+    }
     console.error("Không thể khôi phục trạng thái đăng nhập.", error);
     showNotice(error.message || "Không thể khôi phục trạng thái đăng nhập.");
   }
@@ -666,6 +687,19 @@ function renderObjectives(objectives) {
 }
 
 function renderQuiz(lesson) {
+  if (!quizStarted && quizScore === null) {
+    return `
+      <div class="quiz-start-card">
+        <span class="quiz-start-icon" aria-hidden="true">⏱</span>
+        <div class="quiz-start-copy">
+          <span class="section-kicker">Sẵn sàng luyện tập?</span>
+          <h3>Bài làm có thời lượng 20 phút</h3>
+          <p>Gồm 15 câu trắc nghiệm, 3 nhóm đúng/sai và 2 câu trả lời ngắn. Đồng hồ chỉ bắt đầu khi bạn chọn bắt đầu.</p>
+        </div>
+        <button class="primary-button quiz-start-button" type="button" data-start-quiz>Bắt đầu làm bài</button>
+      </div>`;
+  }
+
   const questions = lesson.questions.map((question, questionIndex) => {
     const options = question.options.map((option, optionIndex) => {
       const selected = quizAnswers.multipleChoice[questionIndex] === optionIndex;
@@ -715,8 +749,8 @@ function renderQuiz(lesson) {
   }).join("");
   const result = quizScore === null ? "" : `
     <section class="quiz-result" aria-labelledby="quizResultTitle">
-      <h3 id="quizResultTitle" tabindex="-1">Kết quả: ${formatNumber(quizScore)}/20 điểm</h3>
-      <p>${quizScore === 20 ? "Xuất sắc! Bạn đã nắm chắc các ý chính." : "Bài học đã được ghi nhận. Hãy xem giải thích để củng cố kiến thức."}</p>
+      <h3 id="quizResultTitle" tabindex="-1">Kết quả: ${formatNumber(quizScore)}/10 điểm</h3>
+      <p>${quizScore === QUIZ_MAX_SCORE ? "Xuất sắc! Bạn đã nắm chắc các ý chính." : "Bài học đã được ghi nhận. Hãy xem giải thích để củng cố kiến thức."}</p>
       <div class="answer-explanations">
         <h4>Trắc nghiệm</h4>
         ${lesson.questions.map((question, index) => `<article class="answer-explanation">
@@ -734,24 +768,70 @@ function renderQuiz(lesson) {
       </div>
     </section>`;
   return `
-    <div class="quiz-heading">
-      <div><span class="section-kicker">Tự kiểm tra</span><h2 id="quizTitle">Bạn đã hiểu đến đâu?</h2></div>
-      <span class="quiz-count">20 mục đánh giá</span>
+    <div class="quiz-attempt">
+      <div class="quiz-attempt-header">
+        <div class="quiz-attempt-status">
+          <span class="section-kicker">${quizScore === null ? "Đang làm bài" : "Đã kết thúc"}</span>
+          <h3>${quizScore === null ? "Tập trung hoàn thành các câu hỏi" : "Kết quả bài tập"}</h3>
+        </div>
+        <div class="quiz-timer" data-timer-state="${quizTimerState()}" role="timer" aria-label="Thời gian còn lại">
+          <span>Thời gian còn lại</span>
+          <strong data-quiz-timer>${formatQuizTime(quizTimeRemaining)}</strong>
+        </div>
+      </div>
+      <p class="quiz-timer-message" data-quiz-timer-message data-timer-state="${quizTimerState()}" aria-live="polite">${quizTimerMessage()}</p>
+      <div class="quiz-heading">
+        <div><span class="section-kicker">Tự kiểm tra</span><h2 id="quizTitle" tabindex="-1">Bạn đã hiểu đến đâu?</h2></div>
+        <span class="quiz-count">20 mục đánh giá</span>
+      </div>
+      <p class="quiz-intro">Câu chưa trả lời được tính 0 điểm. Bạn có thể nộp bài bất cứ lúc nào; hệ thống sẽ tự nộp khi hết giờ.</p>
+      <h3 class="quiz-subheading">A. Trắc nghiệm (15 câu)</h3>
+      <div class="quiz-questions">${questions}</div>
+      <h3 class="quiz-subheading">B. Đúng / Sai (3 nhóm, mỗi nhóm 4 ý)</h3>
+      <div class="quiz-questions">${trueFalse}</div>
+      <h3 class="quiz-subheading">C. Trả lời ngắn (2 câu)</h3>
+      <div class="short-answer-list">${shortAnswers}</div>
+      <p class="quiz-status" id="quizStatus" role="status"></p>
+      ${result}
+      <div class="quiz-actions">
+        ${quizScore === null
+          ? '<button class="primary-button" type="button" data-submit-quiz>Nộp bài</button>'
+          : '<button class="secondary-button" type="button" data-retry-quiz>Làm lại</button>'}
+      </div>
     </div>
-    <p class="quiz-intro">Hoàn thành 15 câu trắc nghiệm, 3 nhóm đúng/sai và 2 câu trả lời ngắn. Điểm cùng lời giải sẽ hiện sau khi nộp bài.</p>
-    <h3 class="quiz-subheading">A. Trắc nghiệm (15 câu)</h3>
-    <div class="quiz-questions">${questions}</div>
-    <h3 class="quiz-subheading">B. Đúng / Sai (3 nhóm, mỗi nhóm 4 ý)</h3>
-    <div class="quiz-questions">${trueFalse}</div>
-    <h3 class="quiz-subheading">C. Trả lời ngắn (2 câu)</h3>
-    <div class="short-answer-list">${shortAnswers}</div>
-    <p class="quiz-status" id="quizStatus" role="status"></p>
-    ${result}
-    <div class="quiz-actions">
-      ${quizScore === null
-        ? '<button class="primary-button" type="button" data-submit-quiz>Nộp bài</button>'
-        : '<button class="secondary-button" type="button" data-retry-quiz>Làm lại câu hỏi</button>'}
-    </div>`;
+  `;
+}
+
+function formatQuizTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function quizTimerState() {
+  if (quizTimeRemaining <= 60) return "critical";
+  if (quizTimeRemaining <= 300) return "warning";
+  return "normal";
+}
+
+function quizTimerMessage() {
+  if (quizTimedOut) return "Hết giờ! Hệ thống đã tự động nộp bài.";
+  if (quizScore !== null) return "Bài đã được nộp. Đồng hồ đã dừng.";
+  if (quizTimeRemaining <= 60) return "Còn 1 phút! Hãy hoàn tất và nộp bài.";
+  if (quizTimeRemaining <= 300) return `Còn ${Math.ceil(quizTimeRemaining / 60)} phút. Hãy chú ý thời gian.`;
+  return "Bài sẽ tự động kết thúc khi đồng hồ về 00:00.";
+}
+
+function updateQuizTimerDisplay() {
+  const timer = document.querySelector("#quizContainer [data-quiz-timer]");
+  if (!timer) return;
+  timer.textContent = formatQuizTime(quizTimeRemaining);
+  const timerState = quizTimerState();
+  timer.closest(".quiz-timer").dataset.timerState = timerState;
+  const message = document.querySelector("#quizContainer [data-quiz-timer-message]");
+  message.dataset.timerState = timerState;
+  const nextMessage = quizTimerMessage();
+  if (message.textContent !== nextMessage) message.textContent = nextMessage;
 }
 
 function isShortAnswerCorrect(question, answer) {
@@ -806,6 +886,7 @@ function renderSimulation(lesson) {
 }
 
 function renderLesson(lesson) {
+  stopQuizTimer();
   currentLesson = lesson;
   quizAnswers = {
     multipleChoice: Array(lesson.questions.length).fill(null),
@@ -813,6 +894,9 @@ function renderLesson(lesson) {
     shortAnswer: Array(lesson.shortAnswer.length).fill("")
   };
   quizScore = null;
+  quizStarted = false;
+  quizTimedOut = false;
+  quizTimeRemaining = QUIZ_DURATION_SECONDS;
   const lessonDetail = document.querySelector("#lessonDetail");
   lessonDetail.innerHTML = `
     <header class="lesson-banner">
@@ -820,7 +904,7 @@ function renderLesson(lesson) {
         <div class="lesson-breadcrumb">${lesson.category} <span aria-hidden="true">/</span> ${lesson.level}</div>
         <h1 id="lessonHeading">${lesson.title}</h1>
         <p>${lesson.summary}</p>
-        <div class="lesson-meta"><span>${lesson.duration}</span><span>20 mục tự kiểm tra</span>
+        <div class="lesson-meta"><span>${lesson.duration}</span><span>20 mục bài tập · 20 phút</span>
           ${progress.completed.includes(lesson.id) ? '<span class="completed-badge">Đã hoàn thành</span>' : ""}
         </div>
       </div>
@@ -828,6 +912,12 @@ function renderLesson(lesson) {
     </header>
     <div class="lesson-layout">
       <div class="lesson-content">
+        <section class="lesson-theory" id="lesson-theory" aria-labelledby="theoryTitle">
+          <header class="learning-area-heading">
+            <div><span class="section-kicker">PHẦN A</span><h2 id="theoryTitle">Lý thuyết</h2>
+              <p>Đọc và khám phá kiến thức theo nhịp độ của bạn. Phần học này không giới hạn thời gian.</p>
+            </div>
+          </header>
         <section class="lesson-section" id="lesson-intro">
           <div class="lesson-section-heading"><span class="section-kicker">Mở đầu</span><h2>Vật lí trong câu chuyện này</h2></div>
           <p class="section-intro">${lesson.intro}</p>
@@ -857,26 +947,33 @@ function renderLesson(lesson) {
           <div class="real-life-card"><span aria-hidden="true">🌱</span><p><strong>Gặp trong đời sống</strong>${lesson.practical}</p></div>
         </section>
         ${lesson.simulation ? renderSimulation(lesson) : ""}
-        <section class="lesson-section quiz-section" id="lesson-quiz" aria-labelledby="quizTitle">
-          <div id="quizContainer">${renderQuiz(lesson)}</div>
-        </section>
         <section class="lesson-section summary-section" id="lesson-summary">
           <div class="lesson-section-heading"><span class="section-kicker">Ghi nhớ</span><h2>Điều cần mang theo</h2></div>
           ${renderObjectives(lesson.summaryPoints)}
         </section>
+        </section>
       </div>
       <aside class="lesson-outline" aria-label="Nội dung bài học">
         <strong>Trong bài này</strong>
+        <a href="#lesson-theory">Phần A: Lý thuyết</a>
         <a href="#lesson-intro">Mở đầu</a>
         <a href="#lesson-goals">Mục tiêu</a>
         <a href="#lesson-core">Kiến thức cốt lõi</a>
         <a href="#lesson-formulas">Công thức</a>
         <a href="#lesson-example">Ví dụ thực tế</a>
         ${lesson.simulation ? '<a href="#lesson-simulation">Mô phỏng</a>' : ""}
-        <a href="#lesson-quiz">Tự kiểm tra</a>
         <a href="#lesson-summary">Tổng kết</a>
+        <a href="#lesson-exercises">Phần B: Bài tập</a>
       </aside>
-    </div>`;
+    </div>
+    <section class="lesson-section exercise-section" id="lesson-exercises" aria-labelledby="exerciseTitle">
+      <header class="learning-area-heading exercise-area-heading">
+        <div><span class="section-kicker">PHẦN B</span><h2 id="exerciseTitle">Bài tập</h2>
+          <p>Kiểm tra kiến thức với 20 mục đánh giá. Mỗi lượt làm bài có tối đa 20 phút.</p>
+        </div>
+      </header>
+      <div id="quizContainer">${renderQuiz(lesson)}</div>
+    </section>`;
   document.querySelector("#lessonPage").classList.add("active");
   updateSimulation();
 }
@@ -946,7 +1043,7 @@ function renderProgress() {
       <article class="progress-lesson">
         <span class="lesson-icon">${lesson.icon}</span>
         <div class="progress-lesson-copy"><span class="card-meta">${lesson.category} · ${lesson.level}</span><h3>${lesson.title}</h3>
-          <p>${completed ? `Đã hoàn thành${typeof best === "number" ? ` · Điểm tốt nhất ${formatNumber(best)}/20` : ""}` : "Chưa hoàn thành"}</p>
+          <p>${completed ? `Đã hoàn thành${typeof best === "number" ? ` · Điểm tốt nhất ${formatNumber(best)}/10` : ""}` : "Chưa hoàn thành"}</p>
         </div>
         <button class="secondary-button" type="button" data-open-lesson="${lesson.id}">${completed ? "Ôn tập" : "Bắt đầu"}</button>
       </article>`;
@@ -968,7 +1065,7 @@ function setActiveNavigation(page) {
 function showPage(page) {
   if (!PAGE_IDS[page]) return;
   stopMotion();
-  currentLesson = page === "lesson" ? currentLesson : null;
+  currentLesson = page === "lesson" || quizStarted ? currentLesson : null;
   Object.entries(PAGE_IDS).forEach(([name, id]) => {
     document.querySelector(`#${id}`).classList.toggle("active", name === page);
   });
@@ -985,6 +1082,13 @@ function openLesson(id) {
     showNotice("Không tìm thấy bài học này. Hãy chọn một chủ đề trong thư viện.");
     return;
   }
+  if (quizStarted && currentLesson && currentLesson.id === id) {
+    document.querySelector("#lessonPage").classList.add("active");
+    setActiveNavigation("lesson");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  if (quizStarted) submitQuiz();
   stopMotion();
   progress.recent = [id, ...progress.recent.filter(recentId => recentId !== id)].slice(0, 5);
   saveProgress();
@@ -997,25 +1101,51 @@ function openLesson(id) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function submitQuiz() {
-  if (!currentLesson) return;
-  const status = document.querySelector("#quizStatus");
-  const missingMultipleChoice = quizAnswers.multipleChoice.some(answer => answer === null);
-  const missingTrueFalse = quizAnswers.trueFalse.some(group => group.some(answer => answer === null));
-  const missingShortAnswer = quizAnswers.shortAnswer.some(answer => answer.trim() === "");
-  if (missingMultipleChoice || missingTrueFalse || missingShortAnswer) {
-    status.textContent = "Hãy hoàn thành tất cả câu trắc nghiệm, ý đúng/sai và câu trả lời ngắn trước khi nộp bài.";
-    status.classList.add("error");
-    return;
-  }
+function stopQuizTimer() {
+  if (quizTimerInterval !== null) window.clearInterval(quizTimerInterval);
+  quizTimerInterval = null;
+  quizDeadline = null;
+}
+
+function startQuiz() {
+  if (!currentLesson || quizStarted || quizScore !== null) return;
+  stopQuizTimer();
+  quizTimeRemaining = QUIZ_DURATION_SECONDS;
+  quizTimedOut = false;
+  quizDeadline = Date.now() + QUIZ_DURATION_SECONDS * 1000;
+  quizStarted = true;
+  document.querySelector("#quizContainer").innerHTML = renderQuiz(currentLesson);
+  updateQuizTimerDisplay();
+  document.querySelector("#quizTitle").focus();
+  quizTimerInterval = window.setInterval(() => {
+    if (!quizStarted || quizDeadline === null) {
+      stopQuizTimer();
+      return;
+    }
+    quizTimeRemaining = Math.max(0, Math.ceil((quizDeadline - Date.now()) / 1000));
+    updateQuizTimerDisplay();
+    if (quizTimeRemaining === 0) submitQuiz(true);
+  }, 1000);
+}
+
+function submitQuiz(timedOut = false) {
+  if (!currentLesson || !quizStarted || quizScore !== null) return;
+  stopQuizTimer();
+  quizStarted = false;
+  quizTimedOut = timedOut;
+
   const multipleChoiceScore = currentLesson.questions.reduce((score, question, index) =>
     score + (question.correct === quizAnswers.multipleChoice[index] ? 1 : 0), 0);
-  const trueFalseCorrectCount = currentLesson.trueFalse.reduce((total, group, groupIndex) =>
-    total + group.statements.filter((statement, statementIndex) =>
-      statement.answer === quizAnswers.trueFalse[groupIndex][statementIndex]).length, 0);
+  const trueFalseScore = currentLesson.trueFalse.reduce((total, group, groupIndex) => {
+    const correctCount = group.statements.filter((statement, statementIndex) =>
+      statement.answer === quizAnswers.trueFalse[groupIndex][statementIndex]).length;
+    return total + correctCount / group.statements.length;
+  }, 0);
   const shortAnswerScore = currentLesson.shortAnswer.reduce((total, question, index) =>
     total + (isShortAnswerCorrect(question, quizAnswers.shortAnswer[index]) ? 1 : 0), 0);
-  quizScore = Math.round((multipleChoiceScore + trueFalseCorrectCount / 4 + shortAnswerScore) * 100) / 100;
+  const maxRawScore = currentLesson.questions.length + currentLesson.trueFalse.length + currentLesson.shortAnswer.length;
+  const rawScore = multipleChoiceScore + trueFalseScore + shortAnswerScore;
+  quizScore = Math.round((rawScore / maxRawScore) * 100) / 10;
   if (!progress.completed.includes(currentLesson.id)) progress.completed.push(currentLesson.id);
   const previousBest = progress.bestScores[currentLesson.id] || 0;
   progress.bestScores[currentLesson.id] = Math.max(previousBest, quizScore);
@@ -1023,18 +1153,27 @@ function submitQuiz() {
   document.querySelector("#quizContainer").innerHTML = renderQuiz(currentLesson);
   renderHome();
   renderLibraryProgress();
+  if (document.querySelector("#progressPage").classList.contains("active")) renderProgress();
   document.querySelector("#quizResultTitle").focus();
+  if (timedOut && !document.querySelector("#lessonPage").classList.contains("active")) {
+    showNotice(`Hết giờ. Kết quả bài tập: ${formatNumber(quizScore)}/10 điểm.`);
+  }
 }
 
 function resetQuiz() {
-  if (!currentLesson) return;
+  if (!currentLesson || quizScore === null) return;
+  stopQuizTimer();
   quizAnswers = {
     multipleChoice: Array(currentLesson.questions.length).fill(null),
     trueFalse: currentLesson.trueFalse.map(group => Array(group.statements.length).fill(null)),
     shortAnswer: Array(currentLesson.shortAnswer.length).fill("")
   };
   quizScore = null;
+  quizStarted = false;
+  quizTimedOut = false;
+  quizTimeRemaining = QUIZ_DURATION_SECONDS;
   document.querySelector("#quizContainer").innerHTML = renderQuiz(currentLesson);
+  document.querySelector("[data-start-quiz]").focus();
 }
 
 function stopMotion() {
@@ -1150,6 +1289,10 @@ document.addEventListener("click", event => {
     return;
   }
   const option = target.closest("[data-quiz-option]");
+  if (target.closest("[data-start-quiz]")) {
+    startQuiz();
+    return;
+  }
   if (option && quizScore === null && currentLesson) {
     const questionIndex = Number(option.dataset.questionIndex);
     quizAnswers.multipleChoice[questionIndex] = Number(option.dataset.optionIndex);
@@ -1229,6 +1372,13 @@ document.querySelector("#registerForm").addEventListener("submit", async event =
     await registerAccount();
   } finally {
     submitButton.disabled = false;
+  }
+});
+
+document.querySelector("#authDialog").addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.currentTarget.close();
   }
 });
 
