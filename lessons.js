@@ -1,110 +1,107 @@
 const physicsLessons = [
   {
-    id: "kinematics",
-    category: "Cơ học",
+    id: "intro-physics",
+    category: "Nhập môn",
     level: "Lớp 10",
-    duration: "12 phút",
-    icon: "🏃",
-    title: "Bài 1: Mô tả chuyển động",
-    summary: "Dùng vị trí, độ dịch chuyển và vận tốc để kể câu chuyện một vật đang chuyển động.",
-    intro: "Động học mô tả vật chuyển động như thế nào mà chưa cần tìm nguyên nhân gây ra chuyển động. Từ hành trình đi học đến xe buýt, ta có thể dùng số liệu và đồ thị để mô tả chuyển động một cách rõ ràng.",
+    duration: "15 phút",
+    icon: "⚛️",
+    title: "Bài 1: Làm quen với Vật lí",
+    summary: "Tìm hiểu Vật lí nghiên cứu điều gì, phát triển ra sao và được nghiên cứu bằng những phương pháp nào.",
+    intro: "Từ quả bóng rơi, dòng điện trong dây dẫn đến sóng Wi‑Fi, Vật lí giúp ta khám phá các quy luật vận động của vật chất và năng lượng. Bài học này giới thiệu đối tượng, lịch sử, vai trò và phương pháp nghiên cứu Vật lí.",
     objectives: [
-      "Phân biệt quãng đường và độ dịch chuyển.",
-      "Tính tốc độ trung bình và vận tốc trong chuyển động thẳng đều.",
-      "Đọc ý nghĩa độ dốc của đồ thị vị trí theo thời gian."
+      "Nêu được đối tượng và mục tiêu nghiên cứu của Vật lí.",
+      "Phân biệt các giai đoạn tiền Vật lí, Vật lí cổ điển và Vật lí hiện đại.",
+      "Mô tả vai trò của Vật lí trong khoa học, kĩ thuật và công nghệ.",
+      "Trình bày được phương pháp thực nghiệm và phương pháp mô hình."
     ],
     core: [
-      { title: "Chọn vật mốc", text: "Muốn nói một vật đang chuyển động hay đứng yên, cần chọn vật mốc và hệ quy chiếu. Người ngồi trên xe đứng yên so với ghế nhưng chuyển động so với mặt đường." },
-      { title: "Quãng đường và độ dịch chuyển", text: "Quãng đường là tổng chiều dài đường đi, luôn không âm. Độ dịch chuyển là độ thay đổi vị trí có hướng; khi vật quay về chỗ cũ, độ dịch chuyển bằng 0 dù quãng đường vẫn lớn hơn 0." },
-      { title: "Tốc độ và vận tốc", text: "Tốc độ cho biết quãng đường đi được trong một đơn vị thời gian. Vận tốc còn cho biết hướng chuyển động; trong chuyển động thẳng đều, vận tốc không đổi." }
+      { title: "Vật lí nghiên cứu vật chất và năng lượng", text: "Vật lí nghiên cứu các dạng vận động của vật chất (chất và trường), năng lượng cùng sự tương tác giữa chúng, từ thế giới vi mô đến vũ trụ." },
+      { title: "Ba chặng đường phát triển", text: "Tiền Vật lí dựa nhiều vào quan sát và suy luận cảm tính; Vật lí cổ điển phát triển phương pháp thực nghiệm từ thế kỉ XVII; Vật lí hiện đại khám phá thế giới vi mô và mở đường cho nhiều công nghệ mới." },
+      { title: "Nền tảng cho khoa học và công nghệ", text: "Kiến thức Vật lí hỗ trợ Hóa học, Sinh học, Địa lí và Thiên văn học; đồng thời góp phần tạo ra máy hơi nước, động cơ điện, máy tính, Internet và nhiều công nghệ hiện đại." },
+      { title: "Ứng dụng đi cùng trách nhiệm", text: "Ứng dụng Vật lí thiếu kiểm soát có thể gây ô nhiễm, cạn kiệt tài nguyên hoặc tạo ra vũ khí hủy diệt. Tiến bộ khoa học cần gắn với trách nhiệm đối với con người và môi trường." },
+      { title: "Hai phương pháp nghiên cứu bổ trợ nhau", text: "Phương pháp thực nghiệm kiểm tra giả thuyết bằng quan sát và thí nghiệm. Phương pháp mô hình dùng mô hình vật chất, toán học hoặc lí thuyết để mô phỏng và giải thích hiện tượng." }
     ],
-    nature: "Nếu trong các khoảng thời gian bằng nhau vật đi được những quãng đường bằng nhau, chuyển động là thẳng đều. Trên đồ thị vị trí–thời gian, độ dốc càng lớn thì độ lớn vận tốc càng lớn; độ dốc âm thể hiện vật chuyển động theo chiều âm đã chọn.",
+    nature: "Nghiên cứu Vật lí là quá trình đặt câu hỏi, xây dựng cách giải thích rồi kiểm tra bằng bằng chứng. Kết quả không phù hợp là cơ hội xem lại giả thuyết hoặc mô hình, chứ không phải lí do để bỏ qua dữ liệu.",
+    guideLabel: "Phương pháp nghiên cứu",
+    guideTitle: "Cách tìm hiểu hiện tượng",
     formulas: [
-      { name: "Tốc độ trung bình", formula: "v_tb = s / Δt", note: "s tính bằng mét (m), Δt bằng giây (s), v_tb bằng mét trên giây (m/s)." },
-      { name: "Độ dịch chuyển trong chuyển động thẳng đều", formula: "Δx = v · Δt", note: "Δx có dấu theo chiều đã chọn; v có thể dương hoặc âm." },
-      { name: "Phương trình vị trí", formula: "x = x₀ + v · t", note: "x₀ là vị trí ban đầu (m), t là thời gian (s), v là vận tốc (m/s)." }
+      { name: "Phương pháp thực nghiệm", formula: "Quan sát → Giả thuyết → Thí nghiệm kiểm chứng → Kết luận", note: "Nếu kết quả không phù hợp, điều chỉnh giả thuyết và tiếp tục kiểm tra." },
+      { name: "Phương pháp mô hình", formula: "Hiện tượng thực tế → Mô hình → Dự đoán và giải thích", note: "Mô hình có thể là vật chất thu nhỏ, công thức toán học hoặc mô hình lí thuyết như tia sáng và chất điểm." }
     ],
-    practical: "Ứng dụng bản đồ trên điện thoại so sánh vị trí của bạn theo thời gian để ước tính tốc độ và thời điểm đến nơi.",
+    practical: "Khi dùng điện thoại kết nối Wi‑Fi, sóng điện từ truyền thông tin giữa thiết bị và bộ định tuyến. Đây là một ví dụ gần gũi về kiến thức Vật lí được ứng dụng trong công nghệ.",
     example: {
-      problem: "Một bạn đi xe đạp được 900 m trong 3 phút với tốc độ không đổi. Tốc độ của bạn bằng bao nhiêu m/s?",
-      steps: ["Đổi thời gian: 3 phút = 180 s.", "Dùng v = s / Δt = 900 / 180."],
-      answer: "v = 5 m/s."
+      problem: "Muốn kiểm tra xem một xe đồ chơi đi được quãng đường có tăng theo thời gian hay không, em có thể tiến hành thế nào?",
+      steps: [
+        "Đặt giả thuyết: nếu xe chạy đều thì thời gian tăng gấp đôi, quãng đường cũng tăng gấp đôi.",
+        "Cho xe chạy trên cùng một mặt phẳng; đo quãng đường sau các khoảng thời gian bằng nhau và lặp lại phép đo.",
+        "So sánh số liệu với giả thuyết; nêu kết luận hoặc điều chỉnh cách giải thích."
+      ],
+      answer: "Đây là phương pháp thực nghiệm: quan sát, đề xuất giả thuyết, kiểm tra bằng phép đo rồi kết luận."
     },
     simulation: "motion",
     questions: [
-      { question: "Một người đi 60 m về phía đông rồi 60 m về phía tây để về điểm xuất phát. Quãng đường và độ dịch chuyển lần lượt là:", options: ["120 m và 0 m", "0 m và 120 m", "60 m và 60 m", "120 m và 120 m"], correct: 0, explanation: "Quãng đường cộng cả hai chặng là 120 m; vị trí cuối trùng vị trí đầu nên độ dịch chuyển bằng 0." },
-      { question: "Trên đồ thị vị trí–thời gian của chuyển động thẳng đều, độ dốc biểu thị:", options: ["Khối lượng", "Vận tốc", "Lực tác dụng", "Nhiệt độ"], correct: 1, explanation: "Độ dốc Δx/Δt chính là vận tốc theo trục đã chọn." },
-      { question: "Một xe đi được 150 m trong 10 s. Tốc độ trung bình của xe là:", options: ["1,5 m/s", "15 m/s", "1500 m/s", "0,067 m/s"], correct: 1, explanation: "v_tb = 150/10 = 15 m/s." }
+      { question: "Vật lí tập trung nghiên cứu:", options: ["Chỉ các sinh vật sống", "Vật chất, năng lượng và sự tương tác giữa chúng", "Chỉ các phản ứng hóa học", "Chỉ lịch sử xã hội"], correct: 1, explanation: "Vật lí nghiên cứu các dạng vận động của vật chất, năng lượng và sự tương tác giữa chúng." },
+      { question: "Đặc điểm nổi bật của Vật lí cổ điển từ thế kỉ XVII là:", options: ["Chỉ giải thích bằng cảm tính", "Phát triển phương pháp thực nghiệm", "Chưa có quan sát tự nhiên", "Chỉ nghiên cứu trí tuệ nhân tạo"], correct: 1, explanation: "Vật lí cổ điển gắn với sự phát triển của phương pháp thực nghiệm, tiêu biểu là Galileo và Newton." },
+      { question: "Trong phương pháp thực nghiệm, sau khi đề xuất giả thuyết, bước phù hợp tiếp theo là:", options: ["Bỏ qua việc kiểm tra", "Làm thí nghiệm để kiểm chứng", "Khẳng định giả thuyết luôn đúng", "Thay đổi kết quả đo"], correct: 1, explanation: "Giả thuyết cần được kiểm tra bằng thí nghiệm; kết quả giúp đưa ra kết luận hoặc điều chỉnh giả thuyết." }
     ],
-    summaryPoints: ["Chuyển động phụ thuộc vào vật mốc.", "Quãng đường khác độ dịch chuyển.", "Độ dốc đồ thị vị trí–thời gian cho biết vận tốc."]
+    summaryPoints: [
+      "Vật lí nghiên cứu vật chất, năng lượng và sự tương tác giữa chúng.",
+      "Lịch sử phát triển gồm tiền Vật lí, Vật lí cổ điển và Vật lí hiện đại.",
+      "Vật lí là nền tảng của nhiều ngành khoa học, kĩ thuật và công nghệ.",
+      "Thực nghiệm kiểm tra giả thuyết; mô hình mô phỏng và giải thích hiện tượng."
+    ]
   },
   {
-    id: "dynamics",
-    category: "Cơ học",
+    id: "lab-safety",
+    category: "Thực hành",
     level: "Lớp 10",
-    duration: "14 phút",
-    icon: "🧲",
-    title: "Bài 2: Lực và các định luật Newton",
-    summary: "Tìm hiểu vì sao vật đổi chuyển động và cách lực tương tác xuất hiện thành từng cặp.",
-    intro: "Một cú đẩy làm xe đồ chơi tăng tốc, còn phanh xe làm xe chậm lại. Động lực học liên hệ lực tác dụng với sự thay đổi chuyển động của vật.",
-    objectives: ["Nhận biết hợp lực và quán tính.", "Vận dụng định luật II Newton để tính gia tốc.", "Phân biệt khối lượng với trọng lượng và nhận biết cặp lực tương tác."],
+    duration: "15 phút",
+    icon: "🧪",
+    title: "Bài 2: Các quy tắc an toàn trong phòng thực hành Vật lí",
+    summary: "Nhận biết nguy cơ từ thiết bị, hiểu biển báo và thực hành đúng cách để bảo vệ bản thân cùng dụng cụ.",
+    intro: "Phòng thực hành có thể có điện, nhiệt, thủy tinh và nguồn sáng mạnh. Nhận diện nguy cơ, làm theo hướng dẫn của giáo viên và báo ngay sự cố sẽ giúp giảm rủi ro cho mọi người.",
+    objectives: [
+      "Nhận biết nguy cơ khi dùng thiết bị điện, thiết bị nhiệt, thủy tinh và laser.",
+      "Nêu được việc cần làm trước, trong và sau buổi thực hành.",
+      "Phân biệt ý nghĩa cơ bản của các nhóm biển báo an toàn.",
+      "Biết báo giáo viên khi phát hiện thiết bị hỏng hoặc sự cố."
+    ],
     core: [
-      { title: "Quán tính", text: "Nếu hợp lực tác dụng lên vật bằng 0, vật giữ nguyên trạng thái đứng yên hoặc chuyển động thẳng đều. Đây là biểu hiện của quán tính." },
-      { title: "Hợp lực làm đổi chuyển động", text: "Gia tốc cùng hướng với hợp lực; gia tốc tăng khi hợp lực tăng và giảm khi khối lượng tăng." },
-      { title: "Lực tương tác", text: "Hai vật tác dụng lực lên nhau cùng lúc. Hai lực này bằng nhau về độ lớn, ngược chiều và đặt lên hai vật khác nhau nên không triệt tiêu nhau." }
+      { title: "Thiết bị điện", text: "Dây dẫn hở, cắm sai nguồn hoặc nước gần mạch điện có thể gây điện giật, chập điện hay cháy. Chỉ cắm điện khi đã lắp xong mạch và được giáo viên cho phép; tắt nguồn trước khi tháo lắp." },
+      { title: "Thiết bị nóng và thủy tinh", text: "Vật đang nung nóng có thể gây bỏng; thủy tinh nứt hoặc vỡ có thể làm đứt tay. Không chạm trực tiếp vào vật nóng, dùng kẹp phù hợp và đặt đồ thủy tinh chắc chắn, tránh mép bàn." },
+      { title: "Laser và nguồn sáng mạnh", text: "Không nhìn trực tiếp vào tia laser hoặc hướng tia về phía người khác vì có thể gây tổn thương mắt." },
+      { title: "Đọc biển báo trước khi thao tác", text: "Biển tam giác nền vàng thường cảnh báo nguy hiểm; biển tròn viền đỏ thường chỉ điều cấm; biển tròn nền xanh chỉ việc bắt buộc; biển xanh lá hình vuông hoặc chữ nhật thường chỉ lối thoát hiểm hay thiết bị cứu hộ." },
+      { title: "An toàn là trách nhiệm chung", text: "Làm sai quy trình, không kiểm tra dụng cụ, thiếu bảo hộ hoặc đùa nghịch đều có thể dẫn đến tai nạn. Báo giáo viên ngay nếu thấy thiết bị hỏng, có mùi khét, tia lửa điện hoặc có người bị thương." }
     ],
-    nature: "Lực không duy trì chuyển động đều; lực tổng hợp khác 0 mới làm vận tốc thay đổi. Vì vậy, xe đang chạy trên đường cần lực kéo để bù lại lực cản và giữ tốc độ ổn định.",
+    nature: "Không tự ý tiến hành thí nghiệm hoặc xử lí sự cố. Làm theo hướng dẫn của giáo viên, dừng thao tác khi có dấu hiệu bất thường và giữ an toàn cho bản thân, bạn học trước khi bảo vệ thiết bị.",
+    guideLabel: "Quy tắc an toàn",
+    guideTitle: "Trước, trong và sau buổi thực hành",
     formulas: [
-      { name: "Định luật II Newton", formula: "ΣF = m · a", note: "ΣF tính bằng niutơn (N), m bằng kilôgam (kg), a bằng mét trên giây bình phương (m/s²)." },
-      { name: "Trọng lượng gần mặt đất", formula: "P = m · g", note: "P là trọng lượng (N), m là khối lượng (kg), g ≈ 9,8 m/s² (thường lấy 10 m/s² khi tính gần đúng)." }
+      { name: "Trước khi thực hành", formula: "Đọc hướng dẫn · kiểm tra dụng cụ · chuẩn bị bảo hộ", note: "Mặc trang phục gọn gàng, buộc tóc và dùng kính hoặc găng tay nếu bài thực hành yêu cầu." },
+      { name: "Trong khi thực hành", formula: "Chờ giáo viên cho phép · thao tác đúng quy trình · báo sự cố", note: "Giữ dây điện gọn, không ăn uống hoặc đùa nghịch; tránh xa vật nóng và vật chuyển động nhanh." },
+      { name: "Sau khi thực hành", formula: "Tắt nguồn · thu dọn dụng cụ · rửa tay", note: "Tắt công tắc trước khi tháo mạch, đặt thiết bị về đúng nơi quy định và báo nếu phát hiện hư hỏng." }
     ],
-    practical: "Dây an toàn trên ô tô giữ cơ thể không tiếp tục lao về phía trước theo quán tính khi xe phanh gấp.",
+    practical: "Nếu ngửi thấy mùi khét hoặc nhìn thấy tia lửa từ thiết bị, hãy dừng thao tác, tránh chạm vào thiết bị và báo ngay cho giáo viên hướng dẫn.",
     example: {
-      problem: "Một xe đẩy khối lượng 4 kg chịu hợp lực 12 N theo phương ngang. Bỏ qua ma sát, gia tốc của xe là bao nhiêu?",
-      steps: ["Chọn chiều dương cùng chiều hợp lực.", "Từ ΣF = m·a, suy ra a = 12/4."],
-      answer: "a = 3 m/s²."
+      problem: "Em phát hiện dây dẫn bị hở vỏ cách điện trước khi lắp mạch. Em nên làm gì?",
+      steps: [
+        "Không cắm điện và không tiếp tục sử dụng dây dẫn đó.",
+        "Báo cho giáo viên để được hướng dẫn thay dụng cụ an toàn.",
+        "Chỉ tiếp tục khi giáo viên xác nhận thiết bị và mạch đã sẵn sàng."
+      ],
+      answer: "Dừng thao tác và báo giáo viên; không tự ý dùng dây hỏng hoặc sửa thiết bị."
     },
-    simulation: "force",
+    simulation: null,
     questions: [
-      { question: "Một vật chuyển động thẳng đều trên mặt phẳng ngang. Hợp lực tác dụng lên vật bằng:", options: ["0 N", "m·v", "m·g", "Luôn lớn hơn 0 N"], correct: 0, explanation: "Chuyển động thẳng đều có gia tốc bằng 0, nên theo định luật II Newton hợp lực bằng 0." },
-      { question: "Một vật có khối lượng 2 kg chịu hợp lực 6 N. Gia tốc của vật là:", options: ["12 m/s²", "3 m/s²", "4 m/s²", "0,33 m/s²"], correct: 1, explanation: "a = F/m = 6/2 = 3 m/s²." },
-      { question: "Trọng lượng của vật gần mặt đất phụ thuộc trực tiếp vào:", options: ["Màu sắc của vật", "Khối lượng và gia tốc trọng trường", "Tốc độ của vật", "Diện tích mặt tiếp xúc"], correct: 1, explanation: "P = m·g; khối lượng đo bằng kg, trọng lượng là lực đo bằng N." }
+      { question: "Trước khi tháo lắp một mạch điện thí nghiệm, cần:", options: ["Tắt nguồn điện", "Chạm tay vào dây để kiểm tra", "Đổ nước lên bàn", "Tự ý đổi nguồn điện"], correct: 0, explanation: "Tắt nguồn trước khi tháo lắp giúp giảm nguy cơ điện giật hoặc chập điện." },
+      { question: "Khi sử dụng đèn laser trong phòng thực hành, cần:", options: ["Nhìn thẳng vào tia để căn chỉnh", "Hướng tia vào người khác", "Không nhìn trực tiếp vào tia và không chiếu vào người", "Chiếu tia lên mắt kính của bạn"], correct: 2, explanation: "Tia laser có thể gây tổn thương mắt; không nhìn trực tiếp hoặc hướng tia về phía người." },
+      { question: "Nếu phát hiện thiết bị có mùi khét trong lúc thực hành, em nên:", options: ["Tiếp tục thí nghiệm cho xong", "Báo ngay cho giáo viên", "Tự tháo thiết bị đang cắm điện", "Che thiết bị lại"], correct: 1, explanation: "Cần dừng thao tác và báo giáo viên khi có dấu hiệu bất thường; không tự ý xử lí thiết bị." }
     ],
-    summaryPoints: ["Hợp lực bằng 0 thì vận tốc không đổi.", "ΣF = m·a liên hệ lực với gia tốc.", "Hai lực tương tác đặt lên hai vật khác nhau."]
-  },
-  {
-    id: "work-energy",
-    category: "Cơ học",
-    level: "Lớp 10",
-    duration: "13 phút",
-    icon: "⚡",
-    title: "Bài 3: Công và năng lượng",
-    summary: "Theo dõi năng lượng truyền đi, chuyển hóa và bảo toàn trong các chuyển động quen thuộc.",
-    intro: "Khi nâng một chiếc cặp lên bàn, ta truyền năng lượng cho cặp. Khi cặp rơi xuống, năng lượng thế chuyển thành động năng.",
-    objectives: ["Tính công của lực không đổi.", "Phân biệt động năng và thế năng trọng trường.", "Dùng định luật bảo toàn cơ năng trong điều kiện phù hợp."],
-    core: [
-      { title: "Công của lực", text: "Lực sinh công khi có thành phần cùng phương với độ dời. Lực vuông góc độ dời không sinh công; lực cản thường sinh công âm." },
-      { title: "Động năng và thế năng", text: "Động năng gắn với chuyển động; thế năng trọng trường phụ thuộc độ cao được chọn làm mốc." },
-      { title: "Chuyển hóa năng lượng", text: "Nếu chỉ có lực thế sinh công, tổng động năng và thế năng được bảo toàn. Có ma sát, một phần cơ năng chuyển thành nhiệt năng." }
-    ],
-    nature: "Năng lượng không tự mất đi: nó được truyền giữa các vật hoặc chuyển từ dạng này sang dạng khác. Ma sát làm cơ năng giảm nhưng tổng năng lượng của hệ và môi trường vẫn được bảo toàn.",
-    formulas: [
-      { name: "Công của lực không đổi", formula: "W = F · s · cos θ", note: "W tính bằng jun (J), F bằng niutơn (N), s bằng mét (m), θ là góc giữa lực và độ dời." },
-      { name: "Động năng", formula: "W_đ = ½ · m · v²", note: "m tính bằng kg, v bằng m/s, W_đ bằng J." },
-      { name: "Thế năng trọng trường", formula: "W_t = m · g · h", note: "h tính từ mốc thế năng (m); g ≈ 9,8 m/s²." }
-    ],
-    practical: "Tàu lượn lên cao tích trữ thế năng; khi xuống dốc, thế năng chuyển thành động năng làm tàu chạy nhanh hơn.",
-    example: {
-      problem: "Nâng một vật 2 kg lên cao thêm 1,5 m. Lấy g = 10 m/s². Thế năng trọng trường của vật tăng bao nhiêu?",
-      steps: ["Độ tăng thế năng: ΔW_t = m·g·Δh.", "Thay số: 2 × 10 × 1,5."],
-      answer: "ΔW_t = 30 J."
-    },
-    simulation: "energy",
-    questions: [
-      { question: "Một lực vuông góc với độ dời của vật sinh công bằng:", options: ["0 J", "F·s", "m·g·h", "½·m·v²"], correct: 0, explanation: "cos 90° = 0 nên W = F·s·cos 90° = 0." },
-      { question: "Khi tốc độ của vật tăng gấp đôi, động năng của vật (khối lượng không đổi):", options: ["Tăng gấp đôi", "Tăng gấp bốn", "Giảm một nửa", "Không đổi"], correct: 1, explanation: "Wđ tỉ lệ với v²; (2v)² = 4v²." },
-      { question: "Một vật rơi tự do, bỏ qua lực cản không khí. Trong quá trình rơi:", options: ["Thế năng tăng, động năng giảm", "Cơ năng giảm liên tục", "Thế năng chuyển dần thành động năng", "Khối lượng vật tăng"], correct: 2, explanation: "Khi độ cao giảm, thế năng giảm và động năng tăng; cơ năng được bảo toàn." }
-    ],
-    summaryPoints: ["Công là cách lực truyền năng lượng.", "Động năng phụ thuộc bình phương tốc độ.", "Cơ năng bảo toàn khi bỏ qua lực không bảo toàn như ma sát."]
+    summaryPoints: [
+      "Kiểm tra thiết bị và đọc hướng dẫn trước khi thực hành.",
+      "Làm theo cho phép và quy trình của giáo viên; sử dụng bảo hộ phù hợp.",
+      "Tránh chạm thiết bị nóng, thủy tinh vỡ và không chiếu laser vào mắt.",
+      "Tắt nguồn trước khi tháo mạch; báo ngay hư hỏng hoặc sự cố."
+    ]
   }
 ];

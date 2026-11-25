@@ -843,7 +843,7 @@ function renderLesson(lesson) {
           <div class="physics-insight"><strong>Bản chất hiện tượng</strong><p>${lesson.nature}</p></div>
         </section>
         <section class="lesson-section" id="lesson-formulas">
-          <div class="lesson-section-heading"><span class="section-kicker">Công thức và đơn vị SI</span><h2>Công cụ mô tả hiện tượng</h2></div>
+          <div class="lesson-section-heading"><span class="section-kicker">${lesson.guideLabel}</span><h2>${lesson.guideTitle}</h2></div>
           <div class="formula-list">${lesson.formulas.map(formula => `
             <article class="formula-card"><div><h3>${formula.name}</h3><code>${formula.formula}</code></div><p>${formula.note}</p></article>`).join("")}</div>
         </section>
@@ -856,7 +856,7 @@ function renderLesson(lesson) {
           </article>
           <div class="real-life-card"><span aria-hidden="true">🌱</span><p><strong>Gặp trong đời sống</strong>${lesson.practical}</p></div>
         </section>
-        ${renderSimulation(lesson)}
+        ${lesson.simulation ? renderSimulation(lesson) : ""}
         <section class="lesson-section quiz-section" id="lesson-quiz" aria-labelledby="quizTitle">
           <div id="quizContainer">${renderQuiz(lesson)}</div>
         </section>
@@ -872,7 +872,7 @@ function renderLesson(lesson) {
         <a href="#lesson-core">Kiến thức cốt lõi</a>
         <a href="#lesson-formulas">Công thức</a>
         <a href="#lesson-example">Ví dụ thực tế</a>
-        <a href="#lesson-simulation">Mô phỏng</a>
+        ${lesson.simulation ? '<a href="#lesson-simulation">Mô phỏng</a>' : ""}
         <a href="#lesson-quiz">Tự kiểm tra</a>
         <a href="#lesson-summary">Tổng kết</a>
       </aside>

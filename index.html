@@ -3,18 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f8faff">
+  <meta name="theme-color" content="#0B1120">
   <meta name="description" content="Khám phá Vật lí THPT qua bài học gần gũi, mô phỏng tương tác và câu hỏi có giải thích.">
   <title>EduVibe — Khám phá Vật lí</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="moomoo.css">
   <script src="lessons.js" defer></script>
   <script src="question-bank.js" defer></script>
   <script src="script.js" defer></script>
-  <script src="moomoo.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -64,8 +62,8 @@
             <div class="ring-inner"><strong id="homeProgressPercent">0%</strong><span>bài học</span></div>
           </div>
           <div class="hero-stats">
-            <div><span class="stat-icon purple" aria-hidden="true">✓</span><p><strong id="homeCompletedCount">0/3</strong><small>Bài học hoàn thành</small></p></div>
-            <div><span class="stat-icon blue" aria-hidden="true">⚛</span><p><strong id="homeLessonTotal">3 bài học</strong><small>Vật lí lớp 10</small></p></div>
+            <div><span class="stat-icon purple" aria-hidden="true">✓</span><p><strong id="homeCompletedCount">0/1</strong><small>Bài học hoàn thành</small></p></div>
+            <div><span class="stat-icon blue" aria-hidden="true">⚛</span><p><strong id="homeLessonTotal">1 bài học</strong><small>Vật lí lớp 10</small></p></div>
           </div>
         </div>
         <div class="hero-decoration deco-one" aria-hidden="true"></div>
@@ -105,7 +103,7 @@
           <span>Hành trình học tập</span>
           <strong id="libraryProgressTitle">Bắt đầu từ một chủ đề</strong>
           <div class="daily-progress"><span id="libraryProgressBar"></span></div>
-          <p id="libraryProgressText">0 trên 3 bài học hoàn thành</p>
+          <p id="libraryProgressText">0 trên 1 bài học hoàn thành</p>
           <button class="text-button" type="button" data-page="progress">Xem tiến độ <span aria-hidden="true">→</span></button>
         </aside>
       </div>
@@ -195,66 +193,6 @@
     </form>
     <p class="auth-local-note">Bản demo lưu tài khoản trong trình duyệt này; chưa phải xác thực dùng cho website công khai.</p>
   </dialog>
-  <button class="moomoo-launcher" id="moomooLauncher" type="button" aria-label="MooMoo – Hỏi tớ bất cứ điều gì nhé!" aria-controls="moomooPanel" aria-expanded="false">
-    <svg class="moomoo-cow" viewBox="0 0 100 100" aria-hidden="true">
-      <path class="cow-ear" d="M25 35C14 26 7 28 8 37c1 8 10 12 20 10M75 35c11-9 18-7 17 2-1 8-10 12-20 10"/>
-      <path class="cow-horn" d="m31 25 3-12c1-5 8-5 9 0l2 11m14 0 2-12c1-5 8-5 9 0l3 12"/>
-      <path class="cow-head" d="M22 34c0-14 12-22 28-22s28 8 28 22v31c0 20-12 29-28 29S22 85 22 65z"/>
-      <path class="cow-spot" d="M26 38c2-9 9-13 18-12 1 8-3 15-11 17-3 1-6-1-7-5zm36-11c8-5 15-1 16 8-1 7-6 10-13 7-5-3-7-10-3-15z"/>
-      <ellipse class="cow-eye" cx="39" cy="52" rx="3.3" ry="4.3"/>
-      <ellipse class="cow-eye" cx="61" cy="52" rx="3.3" ry="4.3"/>
-      <path class="cow-muzzle" d="M32 68c0-9 8-14 18-14s18 5 18 14-8 15-18 15-18-6-18-15z"/>
-      <ellipse class="cow-nostril" cx="43" cy="68" rx="2.2" ry="3"/>
-      <ellipse class="cow-nostril" cx="57" cy="68" rx="2.2" ry="3"/>
-      <path class="cow-smile" d="M43 77c4 3 10 3 14 0"/>
-      <path class="cow-cheek" d="M27 63c3-3 7-3 10-1m26 0c3-2 7-2 10 1"/>
-    </svg>
-    <span class="moomoo-notification" aria-hidden="true"></span>
-  </button>
-  <section class="moomoo-panel" id="moomooPanel" role="dialog" aria-labelledby="moomooTitle" aria-modal="false" hidden>
-    <header class="moomoo-header">
-      <span class="moomoo-header-avatar" aria-hidden="true">
-        <svg class="moomoo-cow" viewBox="0 0 100 100">
-          <path class="cow-ear" d="M25 35C14 26 7 28 8 37c1 8 10 12 20 10M75 35c11-9 18-7 17 2-1 8-10 12-20 10"/>
-          <path class="cow-horn" d="m31 25 3-12c1-5 8-5 9 0l2 11m14 0 2-12c1-5 8-5 9 0l3 12"/>
-          <path class="cow-head" d="M22 34c0-14 12-22 28-22s28 8 28 22v31c0 20-12 29-28 29S22 85 22 65z"/>
-          <path class="cow-spot" d="M26 38c2-9 9-13 18-12 1 8-3 15-11 17-3 1-6-1-7-5zm36-11c8-5 15-1 16 8-1 7-6 10-13 7-5-3-7-10-3-15z"/>
-          <ellipse class="cow-eye" cx="39" cy="52" rx="3.3" ry="4.3"/>
-          <ellipse class="cow-eye" cx="61" cy="52" rx="3.3" ry="4.3"/>
-          <path class="cow-muzzle" d="M32 68c0-9 8-14 18-14s18 5 18 14-8 15-18 15-18-6-18-15z"/>
-          <ellipse class="cow-nostril" cx="43" cy="68" rx="2.2" ry="3"/>
-          <ellipse class="cow-nostril" cx="57" cy="68" rx="2.2" ry="3"/>
-          <path class="cow-smile" d="M43 77c4 3 10 3 14 0"/>
-          <path class="cow-cheek" d="M27 63c3-3 7-3 10-1m26 0c3-2 7-2 10 1"/>
-        </svg>
-      </span>
-      <span class="moomoo-heading">
-        <strong id="moomooTitle">MooMoo</strong>
-        <small>Trợ lý học tập của bạn</small>
-      </span>
-      <button class="moomoo-icon-button" type="button" data-moomoo-clear aria-label="Bắt đầu cuộc trò chuyện mới" title="Cuộc trò chuyện mới">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>
-      </button>
-      <button class="moomoo-icon-button" type="button" data-moomoo-close aria-label="Đóng MooMoo">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
-      </button>
-    </header>
-    <div class="moomoo-messages" id="moomooMessages" role="log" aria-label="Lịch sử trò chuyện" aria-live="polite" aria-relevant="additions text"></div>
-    <div class="moomoo-suggestions" id="moomooSuggestions" aria-label="Gợi ý câu hỏi"></div>
-    <div class="moomoo-typing" id="moomooTyping" aria-live="polite" hidden>
-      <span class="moomoo-small-avatar" aria-hidden="true">🐮</span>
-      <span>MooMoo đang suy nghĩ</span><i></i><i></i><i></i>
-    </div>
-    <p class="moomoo-status" id="moomooStatus" role="status" aria-live="polite"></p>
-    <form class="moomoo-composer" id="moomooForm">
-      <label class="visually-hidden" for="moomooInput">Nhập câu hỏi cho MooMoo</label>
-      <textarea id="moomooInput" rows="1" maxlength="2000" placeholder="Hỏi MooMoo điều cậu đang thắc mắc..." required></textarea>
-      <button class="moomoo-send" type="submit" aria-label="Gửi tin nhắn">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-7-8-1zm8 1 8-9"/></svg>
-      </button>
-    </form>
-    <p class="moomoo-privacy">Đừng gửi thông tin cá nhân nhạy cảm. Lịch sử chat được lưu trên thiết bị này.</p>
-  </section>
   <div class="app-notice" id="appNotice" role="status" aria-live="polite"></div>
 </body>
 </html>
