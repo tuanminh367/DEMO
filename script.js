@@ -7,39 +7,68 @@ const PASSWORD_HASH_ITERATIONS = 210000;
 const AUTH_CRYPTO_ERROR = "Mã hóa mật khẩu không khả dụng trong trình duyệt này.";
 const QUIZ_DURATION_SECONDS = 20 * 60;
 const QUIZ_MAX_SCORE = 10;
+const MOTION_TRACK_LENGTH_METERS = 150;
 const PAGE_IDS = {
   home: "homePage",
   lessons: "lessonsPage",
   lesson: "lessonPage",
+  theory: "theoryPage",
+  exercises: "exercisePage",
   progress: "progressPage"
 };
 physicsLessons.forEach(lesson => {
   const bank = physicsQuizExtensions[lesson.id];
   if (!bank) throw new Error(`Thiếu bộ câu hỏi cho bài ${lesson.id}.`);
+  const sourceNumbers = new Set();
   lesson.questions = [
     ...lesson.questions,
-    ...bank.multipleChoice.map(([question, options, correct, explanation]) => ({ question, options, correct, explanation }))
+    ...bank.multipleChoice.map(([question, options, correct, explanation, sourceNumber, illustrationId]) => {
+      const item = { question, options, correct, explanation };
+      if (sourceNumber !== undefined) {
+        if (!Number.isInteger(sourceNumber) || sourceNumber < 1 || sourceNumbers.has(sourceNumber)) {
+          throw new Error(`Số câu nguồn của bài ${lesson.id} không hợp lệ hoặc bị trùng.`);
+        }
+        sourceNumbers.add(sourceNumber);
+        item.sourceNumber = sourceNumber;
+      }
+      if (illustrationId) {
+        if (!bank.illustrations || !bank.illustrations[illustrationId]) {
+          throw new Error(`Thiếu hình minh họa ${illustrationId} trong bài ${lesson.id}.`);
+        }
+        item.illustration = bank.illustrations[illustrationId];
+      }
+      return item;
+    })
   ];
   lesson.trueFalse = bank.trueFalse.map(group => ({
     title: group.title,
     statements: group.statements.map(([text, answer, explanation]) => ({ text, answer, explanation }))
   }));
   lesson.shortAnswer = bank.shortAnswer;
-  if (lesson.questions.length !== 15 || lesson.trueFalse.length !== 3 ||
-      lesson.trueFalse.some(group => group.statements.length !== 4) || lesson.shortAnswer.length !== 2) {
-    throw new Error(`Bộ câu hỏi của bài ${lesson.id} chưa đủ cấu trúc 15/3×4/2.`);
+  const validQuizStructure = bank.multipleChoiceOnly
+    ? lesson.questions.length === 30 && lesson.trueFalse.length === 0 && lesson.shortAnswer.length === 0
+    : lesson.questions.length === 15 && lesson.trueFalse.length === 3 &&
+      lesson.trueFalse.every(group => group.statements.length === 4) && lesson.shortAnswer.length === 2;
+  if (!validQuizStructure) {
+    throw new Error(`Bộ câu hỏi của bài ${lesson.id} chưa đủ cấu trúc dự kiến.`);
   }
   if (lesson.questions.some(question => !Array.isArray(question.options) ||
-      question.correct < 0 || question.correct >= question.options.length ||
+      !Number.isInteger(question.correct) || question.correct < 0 || question.correct >= question.options.length ||
       !question.explanation) ||
       lesson.shortAnswer.some(question => !question.acceptedAnswers.length || !question.expectedAnswer)) {
     throw new Error(`Bộ câu hỏi của bài ${lesson.id} có đáp án hoặc lời giải không hợp lệ.`);
+  }
+  if (bank.multipleChoiceOnly && (sourceNumbers.size !== 30 ||
+      new Set(lesson.questions.map(question => question.question)).size !== 30 ||
+      lesson.questions.some(question => question.options.length !== 4))) {
+    throw new Error(`Bài ${lesson.id} phải có 30 câu ABCD không trùng số hoặc nội dung.`);
   }
 });
 const categories = ["Tất cả", ...new Set(physicsLessons.map(lesson => lesson.category))];
 const emptyProgress = () => ({ completed: [], bestScores: {}, recent: [], scoreScale: QUIZ_MAX_SCORE });
 let progress = loadProgress();
 let activeFilter = "Tất cả";
+let currentPage = null;
 let currentAccount = null;
 let currentLesson = null;
 let quizAnswers = { multipleChoice: [], trueFalse: [], shortAnswer: [] };
@@ -48,16 +77,22 @@ let quizStarted = false;
 let quizTimedOut = false;
 let quizTimeRemaining = QUIZ_DURATION_SECONDS;
 let quizDeadline = null;
+let quizStartedAt = null;
+let quizElapsedSeconds = 0;
 let quizTimerInterval = null;
 let motionFrame = null;
-let motionStartTimestamp = null;
+let motionElapsed = 0;
+let motionDuration = 0;
+let motionLastTimestamp = null;
+let motionState = "idle";
+let motionTimeStep = "0.5";
 let noticeTimer = null;
 
 const simulationDefinitions = {
   motion: {
     title: "Thử nghiệm: vận tốc và quãng đường",
     description: "Điều chỉnh vận tốc hoặc thời gian, rồi quan sát vị trí vật trên đường thẳng.",
-    visualCaption: "Quỹ đạo mô phỏng 100 m",
+    visualCaption: `Quỹ đạo mô phỏng ${MOTION_TRACK_LENGTH_METERS} m`,
     controls: [
       { key: "speed", label: "Vận tốc", min: 0, max: 15, step: 0.5, value: 3, unit: "m/s" },
       { key: "time", label: "Thời gian", min: 0, max: 10, step: 0.5, value: 4, unit: "s" }
@@ -69,7 +104,7 @@ const simulationDefinitions = {
         unit: "m",
         formula: "s = v · t",
         detail: `Sau ${formatNumber(values.time)} s, vật đi được ${formatNumber(distance)} m nếu vận tốc không đổi.`,
-        positionPercent: Math.min(100, distance)
+        positionMeters: distance
       };
     }
   },
@@ -686,7 +721,13 @@ function renderObjectives(objectives) {
   return `<ul class="objective-list">${objectives.map(item => `<li>${item}</li>`).join("")}</ul>`;
 }
 
+function isMultipleChoiceOnlyQuiz(lesson) {
+  return lesson.questions.length > 0 && lesson.trueFalse.length === 0 && lesson.shortAnswer.length === 0;
+}
+
 function renderQuiz(lesson) {
+  const multipleChoiceOnly = isMultipleChoiceOnlyQuiz(lesson);
+  const quizCount = multipleChoiceOnly ? `${lesson.questions.length} câu trắc nghiệm` : "20 mục đánh giá";
   if (!quizStarted && quizScore === null) {
     return `
       <div class="quiz-start-card">
@@ -694,7 +735,9 @@ function renderQuiz(lesson) {
         <div class="quiz-start-copy">
           <span class="section-kicker">Sẵn sàng luyện tập?</span>
           <h3>Bài làm có thời lượng 20 phút</h3>
-          <p>Gồm 15 câu trắc nghiệm, 3 nhóm đúng/sai và 2 câu trả lời ngắn. Đồng hồ chỉ bắt đầu khi bạn chọn bắt đầu.</p>
+          <p>${multipleChoiceOnly
+    ? `Gồm ${lesson.questions.length} câu trắc nghiệm có trọng số bằng nhau.`
+    : "Gồm 15 câu trắc nghiệm, 3 nhóm đúng/sai và 2 câu trả lời ngắn."} Đồng hồ chỉ bắt đầu khi bạn chọn bắt đầu.</p>
         </div>
         <button class="primary-button quiz-start-button" type="button" data-start-quiz>Bắt đầu làm bài</button>
       </div>`;
@@ -714,7 +757,8 @@ function renderQuiz(lesson) {
     }).join("");
     return `
       <fieldset class="quiz-question" ${quizScore !== null ? "disabled" : ""}>
-        <legend><span>Trắc nghiệm ${questionIndex + 1}</span>${question.question}</legend>
+        <legend><span>Trắc nghiệm ${question.sourceNumber || questionIndex + 1}</span>${question.question}</legend>
+        ${question.illustration || ""}
         <div class="quiz-options">${options}</div>
       </fieldset>`;
   }).join("");
@@ -741,30 +785,48 @@ function renderQuiz(lesson) {
     return `
       <label class="short-answer-field" for="short-answer-${index}">
         <span><strong>Câu ${index + 1}.</strong> ${question.question}</span>
-        <input id="short-answer-${index}" type="text" inputmode="decimal" autocomplete="off"
+        <input id="short-answer-${index}" type="number" inputmode="decimal" autocomplete="off"
           data-short-answer-index="${index}" value="${escapeHtml(quizAnswers.shortAnswer[index])}"
-          placeholder="Nhập câu trả lời" ${quizScore !== null ? "disabled" : ""}>
+          placeholder="Nhập đáp án bằng số" ${quizScore !== null ? "disabled" : ""}>
         ${quizScore !== null ? `<small class="${correct ? "short-correct" : "short-wrong"}">${correct ? "Chính xác." : `Đáp án tham khảo: ${question.expectedAnswer}`}</small>` : ""}
       </label>`;
   }).join("");
+  const multipleChoiceSection = lesson.questions.length ? `
+    <h3 class="quiz-subheading">A. Trắc nghiệm (${lesson.questions.length} câu)</h3>
+    <div class="quiz-questions">${questions}</div>` : "";
+  const statementsPerGroup = lesson.trueFalse.length ? lesson.trueFalse[0].statements.length : 0;
+  const sameTrueFalseGroupSize = lesson.trueFalse.every(group => group.statements.length === statementsPerGroup);
+  const trueFalseCountDetail = sameTrueFalseGroupSize && statementsPerGroup
+    ? `, mỗi nhóm ${statementsPerGroup} ý`
+    : "";
+  const trueFalseSection = lesson.trueFalse.length ? `
+    <h3 class="quiz-subheading">B. Đúng / Sai (${lesson.trueFalse.length} nhóm${trueFalseCountDetail})</h3>
+    <div class="quiz-questions">${trueFalse}</div>` : "";
+  const shortAnswerSection = lesson.shortAnswer.length ? `
+    <h3 class="quiz-subheading">C. Trả lời ngắn (${lesson.shortAnswer.length} câu · đáp án bằng số)</h3>
+    <div class="short-answer-list">${shortAnswers}</div>` : "";
+  const correctCount = lesson.questions.reduce((count, question, index) =>
+    count + (question.correct === quizAnswers.multipleChoice[index] ? 1 : 0), 0);
   const result = quizScore === null ? "" : `
     <section class="quiz-result" aria-labelledby="quizResultTitle">
       <h3 id="quizResultTitle" tabindex="-1">Kết quả: ${formatNumber(quizScore)}/10 điểm</h3>
       <p>${quizScore === QUIZ_MAX_SCORE ? "Xuất sắc! Bạn đã nắm chắc các ý chính." : "Bài học đã được ghi nhận. Hãy xem giải thích để củng cố kiến thức."}</p>
+      ${multipleChoiceOnly ? `<div class="quiz-result-stats">
+        <div><span>Câu đúng</span><strong>${correctCount}/${lesson.questions.length}</strong></div>
+        <div><span>Tỉ lệ chính xác</span><strong>${formatNumber(correctCount / lesson.questions.length * 100)}%</strong></div>
+        <div><span>Thời gian đã dùng</span><strong>${formatQuizTime(quizElapsedSeconds)}</strong></div>
+      </div>` : ""}
       <div class="answer-explanations">
-        <h4>Trắc nghiệm</h4>
-        ${lesson.questions.map((question, index) => `<article class="answer-explanation">
-          <strong>Câu ${index + 1}: ${question.options[question.correct]}</strong><p>${question.explanation}</p>
-        </article>`).join("")}
-        <h4>Đúng / Sai</h4>
-        ${lesson.trueFalse.map((group, groupIndex) => `<article class="answer-explanation">
+        ${lesson.questions.length ? `<h4>Trắc nghiệm</h4>${lesson.questions.map((question, index) => `<article class="answer-explanation">
+          <strong>Câu ${question.sourceNumber || index + 1}: ${question.options[question.correct]}</strong><p>${question.explanation}</p>
+        </article>`).join("")}` : ""}
+        ${lesson.trueFalse.length ? `<h4>Đúng / Sai</h4>${lesson.trueFalse.map((group, groupIndex) => `<article class="answer-explanation">
           <strong>${group.title}</strong>
           <ul>${group.statements.map((statement, statementIndex) => `<li><b>${String.fromCharCode(97 + statementIndex)}. ${statement.answer ? "Đúng" : "Sai"}:</b> ${statement.explanation}</li>`).join("")}</ul>
-        </article>`).join("")}
-        <h4>Trả lời ngắn</h4>
-        ${lesson.shortAnswer.map((question, index) => `<article class="answer-explanation">
+        </article>`).join("")}` : ""}
+        ${lesson.shortAnswer.length ? `<h4>Trả lời ngắn</h4>${lesson.shortAnswer.map((question, index) => `<article class="answer-explanation">
           <strong>Câu ${index + 1}: ${question.expectedAnswer}</strong><p>${question.explanation}</p>
-        </article>`).join("")}
+        </article>`).join("")}` : ""}
       </div>
     </section>`;
   return `
@@ -782,15 +844,12 @@ function renderQuiz(lesson) {
       <p class="quiz-timer-message" data-quiz-timer-message data-timer-state="${quizTimerState()}" aria-live="polite">${quizTimerMessage()}</p>
       <div class="quiz-heading">
         <div><span class="section-kicker">Tự kiểm tra</span><h2 id="quizTitle" tabindex="-1">Bạn đã hiểu đến đâu?</h2></div>
-        <span class="quiz-count">20 mục đánh giá</span>
+        <span class="quiz-count">${quizCount}</span>
       </div>
       <p class="quiz-intro">Câu chưa trả lời được tính 0 điểm. Bạn có thể nộp bài bất cứ lúc nào; hệ thống sẽ tự nộp khi hết giờ.</p>
-      <h3 class="quiz-subheading">A. Trắc nghiệm (15 câu)</h3>
-      <div class="quiz-questions">${questions}</div>
-      <h3 class="quiz-subheading">B. Đúng / Sai (3 nhóm, mỗi nhóm 4 ý)</h3>
-      <div class="quiz-questions">${trueFalse}</div>
-      <h3 class="quiz-subheading">C. Trả lời ngắn (2 câu)</h3>
-      <div class="short-answer-list">${shortAnswers}</div>
+      ${multipleChoiceSection}
+      ${trueFalseSection}
+      ${shortAnswerSection}
       <p class="quiz-status" id="quizStatus" role="status"></p>
       ${result}
       <div class="quiz-actions">
@@ -849,7 +908,14 @@ function renderSimulation(lesson) {
     </label>`).join("");
   let visual;
   if (lesson.simulation === "motion") {
-    visual = `<div class="sim-motion"><div class="sim-track"><span class="sim-track-start">0 m</span><span class="sim-motion-marker" id="motionMarker" aria-hidden="true">●</span><span class="sim-track-end">100 m</span></div></div>`;
+    visual = `<div class="sim-motion" data-motion-state="idle">
+      <div class="sim-track">
+        <span class="sim-track-start">0 m</span>
+        <span class="sim-motion-marker" id="motionMarker" aria-hidden="true"><span>●</span></span>
+        <span class="sim-track-end">${MOTION_TRACK_LENGTH_METERS} m</span>
+      </div>
+      <p class="sim-motion-status" data-simulation-status aria-live="polite">Sẵn sàng mô phỏng.</p>
+    </div>`;
   } else if (lesson.simulation === "wave") {
     visual = `<svg class="wave-visual" viewBox="0 0 360 100" role="img" aria-label="Đồ thị sóng thay đổi theo biên độ và bước sóng"><line x1="0" y1="50" x2="360" y2="50"></line><path id="wavePath" d=""></path><text x="2" y="95">0 m</text><text x="323" y="95">8 m</text></svg>`;
   } else if (lesson.simulation === "optics") {
@@ -879,45 +945,80 @@ function renderSimulation(lesson) {
             <p data-sim-detail></p>
             <code data-sim-formula></code>
           </div>
-          ${lesson.simulation === "motion" ? '<button class="secondary-button sim-play-button" type="button" data-simulation-play>▶ Chạy mô phỏng</button>' : ""}
+          ${lesson.simulation === "motion" ? `<div class="sim-motion-actions">
+            <button class="secondary-button sim-play-button" type="button" data-simulation-play>▶ Chạy mô phỏng</button>
+            <button class="secondary-button sim-reset-button" type="button" data-simulation-reset>↺ Đặt lại</button>
+          </div>` : ""}
         </div>
       </div>
     </section>`;
 }
 
-function renderLesson(lesson) {
-  stopQuizTimer();
-  currentLesson = lesson;
-  quizAnswers = {
-    multipleChoice: Array(lesson.questions.length).fill(null),
-    trueFalse: lesson.trueFalse.map(group => Array(group.statements.length).fill(null)),
-    shortAnswer: Array(lesson.shortAnswer.length).fill("")
-  };
-  quizScore = null;
-  quizStarted = false;
-  quizTimedOut = false;
-  quizTimeRemaining = QUIZ_DURATION_SECONDS;
-  const lessonDetail = document.querySelector("#lessonDetail");
-  lessonDetail.innerHTML = `
+function lessonRoute(lesson, destination = "") {
+  return `#lesson/${encodeURIComponent(lesson.id)}${destination ? `/${destination}` : ""}`;
+}
+
+function renderLessonBanner(lesson, headingId) {
+  return `
     <header class="lesson-banner">
       <div class="lesson-banner-copy">
         <div class="lesson-breadcrumb">${lesson.category} <span aria-hidden="true">/</span> ${lesson.level}</div>
-        <h1 id="lessonHeading">${lesson.title}</h1>
+        <h1 id="${headingId}">${lesson.title}</h1>
         <p>${lesson.summary}</p>
-        <div class="lesson-meta"><span>${lesson.duration}</span><span>20 mục bài tập · 20 phút</span>
+        <div class="lesson-meta"><span>${lesson.duration}</span>
+          <span>${isMultipleChoiceOnlyQuiz(lesson) ? `${lesson.questions.length} câu trắc nghiệm · 20 phút` : "20 mục bài tập · 20 phút"}</span>
           ${progress.completed.includes(lesson.id) ? '<span class="completed-badge">Đã hoàn thành</span>' : ""}
         </div>
       </div>
       <span class="lesson-banner-icon" aria-hidden="true">${lesson.icon}</span>
-    </header>
-    <div class="lesson-layout">
+    </header>`;
+}
+
+function renderLesson(lesson) {
+  document.querySelector("#lessonDetail").innerHTML = `
+    ${renderLessonBanner(lesson, "lessonHeading")}
+    <div class="lesson-layout lesson-hub-layout">
+      <div class="lesson-content lesson-entry-list">
+        <a class="lesson-section lesson-entry-card" href="${lessonRoute(lesson, "theory")}">
+          <span class="section-kicker">PHẦN A</span>
+          <h2>Lý thuyết</h2>
+          <p>Khám phá kiến thức, phương pháp và ví dụ của bài học.</p>
+          <strong>Mở phần lý thuyết <span aria-hidden="true">→</span></strong>
+        </a>
+        <a class="lesson-section lesson-entry-card" href="${lessonRoute(lesson, "exercises")}">
+          <span class="section-kicker">PHẦN B</span>
+          <h2>Bài tập</h2>
+          <p>Kiểm tra kiến thức với thang điểm 10 và thời gian làm bài 20 phút.</p>
+          <strong>Mở phần bài tập <span aria-hidden="true">→</span></strong>
+        </a>
+      </div>
+      <aside class="lesson-outline" aria-label="Nội dung bài học">
+        <strong>Trong bài này</strong>
+        <a href="${lessonRoute(lesson, "theory")}">Phần A: Lý thuyết</a>
+        <a href="${lessonRoute(lesson, "exercises")}">Phần B: Bài tập</a>
+      </aside>
+    </div>`;
+}
+
+function renderTheoryPage(lesson) {
+  const sections = [
+    ["lesson-intro", "Mở đầu"],
+    ["lesson-goals", "Mục tiêu"],
+    ["lesson-core", "Kiến thức cốt lõi"],
+    ["lesson-formulas", "Công thức"],
+    ["lesson-example", "Ví dụ thực tế"],
+    ["lesson-summary", "Tổng kết"]
+  ];
+  document.querySelector("#theoryDetail").innerHTML = `
+    <a class="back-button" href="${lessonRoute(lesson)}">← <span>Quay lại trang bài học</span></a>
+    ${renderLessonBanner(lesson, "theoryPageTitle")}
+    <div class="lesson-layout theory-layout">
       <div class="lesson-content">
-        <section class="lesson-theory" id="lesson-theory" aria-labelledby="theoryTitle">
-          <header class="learning-area-heading">
-            <div><span class="section-kicker">PHẦN A</span><h2 id="theoryTitle">Lý thuyết</h2>
-              <p>Đọc và khám phá kiến thức theo nhịp độ của bạn. Phần học này không giới hạn thời gian.</p>
-            </div>
-          </header>
+        <header class="learning-area-heading">
+          <div><span class="section-kicker">PHẦN A</span><h2>Lý thuyết</h2>
+            <p>Đọc và khám phá kiến thức theo nhịp độ của bạn. Phần học này không giới hạn thời gian.</p>
+          </div>
+        </header>
         <section class="lesson-section" id="lesson-intro">
           <div class="lesson-section-heading"><span class="section-kicker">Mở đầu</span><h2>Vật lí trong câu chuyện này</h2></div>
           <p class="section-intro">${lesson.intro}</p>
@@ -951,31 +1052,39 @@ function renderLesson(lesson) {
           <div class="lesson-section-heading"><span class="section-kicker">Ghi nhớ</span><h2>Điều cần mang theo</h2></div>
           ${renderObjectives(lesson.summaryPoints)}
         </section>
-        </section>
       </div>
-      <aside class="lesson-outline" aria-label="Nội dung bài học">
-        <strong>Trong bài này</strong>
-        <a href="#lesson-theory">Phần A: Lý thuyết</a>
-        <a href="#lesson-intro">Mở đầu</a>
-        <a href="#lesson-goals">Mục tiêu</a>
-        <a href="#lesson-core">Kiến thức cốt lõi</a>
-        <a href="#lesson-formulas">Công thức</a>
-        <a href="#lesson-example">Ví dụ thực tế</a>
-        ${lesson.simulation ? '<a href="#lesson-simulation">Mô phỏng</a>' : ""}
-        <a href="#lesson-summary">Tổng kết</a>
-        <a href="#lesson-exercises">Phần B: Bài tập</a>
+      <aside class="lesson-outline theory-outline" aria-label="Nội dung lý thuyết">
+        <strong>Trong phần lý thuyết</strong>
+        ${sections.map(([id, label]) => `<a href="${lessonRoute(lesson, `theory/${id}`)}">${label}</a>`).join("")}
+        ${lesson.simulation ? `<a href="${lessonRoute(lesson, "theory/lesson-simulation")}">Mô phỏng</a>` : ""}
       </aside>
-    </div>
-    <section class="lesson-section exercise-section" id="lesson-exercises" aria-labelledby="exerciseTitle">
+    </div>`;
+  const motionTimeInput = document.querySelector('#theoryDetail [data-sim-input="time"]');
+  if (motionTimeInput) {
+    motionDuration = Number(motionTimeInput.value);
+    motionTimeStep = motionTimeInput.step;
+    motionElapsed = 0;
+    motionState = "idle";
+    updateMotionControls();
+  }
+  updateSimulation(document.querySelector("#theoryDetail .simulation-card"));
+}
+
+function renderExercisePage(lesson) {
+  document.querySelector("#exerciseDetail").innerHTML = `
+    <a class="back-button" href="${lessonRoute(lesson)}">← <span>Quay lại trang bài học</span></a>
+    ${renderLessonBanner(lesson, "exercisePageTitle")}
+    <section class="lesson-section exercise-section" aria-labelledby="exerciseHeading">
       <header class="learning-area-heading exercise-area-heading">
-        <div><span class="section-kicker">PHẦN B</span><h2 id="exerciseTitle">Bài tập</h2>
-          <p>Kiểm tra kiến thức với 20 mục đánh giá. Mỗi lượt làm bài có tối đa 20 phút.</p>
+        <div><span class="section-kicker">PHẦN B</span><h2 id="exerciseHeading">Bài tập</h2>
+          <p>${isMultipleChoiceOnlyQuiz(lesson)
+    ? `Kiểm tra kiến thức với ${lesson.questions.length} câu trắc nghiệm. Mỗi lượt làm bài có tối đa 20 phút.`
+    : "Kiểm tra kiến thức với 20 mục đánh giá. Mỗi lượt làm bài có tối đa 20 phút."}</p>
         </div>
       </header>
       <div id="quizContainer">${renderQuiz(lesson)}</div>
     </section>`;
-  document.querySelector("#lessonPage").classList.add("active");
-  updateSimulation();
+  if (quizStarted) updateQuizTimerDisplay();
 }
 
 function updateSimulation(container = document.querySelector(".simulation-card")) {
@@ -989,15 +1098,22 @@ function updateSimulation(container = document.querySelector(".simulation-card")
     const output = container.querySelector(`[data-sim-output="${control.key}"]`);
     const value = Number(input.value);
     values[control.key] = value;
-    output.textContent = `${formatNumber(value)}${control.unit ? ` ${control.unit}` : ""}`;
+    const outputText = `${formatNumber(value)}${control.unit ? ` ${control.unit}` : ""}`;
+    if (output.textContent !== outputText) output.textContent = outputText;
   });
   const result = config.calculate(values);
   const valueElement = container.querySelector("[data-sim-value]");
-  valueElement.textContent = result.value === null ? "Phản xạ toàn phần" : `${formatNumber(result.value)} ${result.unit}`.trim();
-  container.querySelector("[data-sim-detail]").textContent = result.detail;
-  container.querySelector("[data-sim-formula]").textContent = result.formula;
+  const resultText = result.value === null ? "Phản xạ toàn phần" : `${formatNumber(result.value)} ${result.unit}`.trim();
+  const detail = container.querySelector("[data-sim-detail]");
+  const formula = container.querySelector("[data-sim-formula]");
+  if (valueElement.textContent !== resultText) valueElement.textContent = resultText;
+  if (detail.textContent !== result.detail) detail.textContent = result.detail;
+  if (formula.textContent !== result.formula) formula.textContent = result.formula;
   const marker = container.querySelector("#motionMarker");
-  if (marker) marker.style.left = `${result.positionPercent}%`;
+  if (marker && typeof result.positionMeters === "number") {
+    const positionPercent = Math.min(100, result.positionMeters / MOTION_TRACK_LENGTH_METERS * 100);
+    marker.style.setProperty("--motion-progress", `${positionPercent}%`);
+  }
   const wavePath = container.querySelector("#wavePath");
   if (wavePath) {
     const amplitude = result.amplitude * 17;
@@ -1051,7 +1167,7 @@ function renderProgress() {
 }
 
 function setActiveNavigation(page) {
-  const selectedPage = page === "lesson" ? "lessons" : page;
+  const selectedPage = ["lesson", "theory", "exercises"].includes(page) ? "lessons" : page;
   document.querySelectorAll("[data-page]").forEach(button => {
     const selected = button.dataset.page === selectedPage;
     button.classList.toggle("active", selected);
@@ -1062,10 +1178,33 @@ function setActiveNavigation(page) {
   });
 }
 
-function showPage(page) {
+function initializeLesson(lesson) {
+  if (currentLesson && currentLesson.id === lesson.id) return;
+  if (quizStarted) submitQuiz();
+  stopMotion();
+  stopQuizTimer();
+  currentLesson = lesson;
+  quizAnswers = {
+    multipleChoice: Array(lesson.questions.length).fill(null),
+    trueFalse: lesson.trueFalse.map(group => Array(group.statements.length).fill(null)),
+    shortAnswer: Array(lesson.shortAnswer.length).fill("")
+  };
+  quizScore = null;
+  quizStarted = false;
+  quizTimedOut = false;
+  quizTimeRemaining = QUIZ_DURATION_SECONDS;
+  quizStartedAt = null;
+  quizElapsedSeconds = 0;
+  progress.recent = [lesson.id, ...progress.recent.filter(recentId => recentId !== lesson.id)].slice(0, 5);
+  saveProgress();
+  currentPage = null;
+}
+
+function activatePage(page, scrollToTop = true) {
   if (!PAGE_IDS[page]) return;
   stopMotion();
-  currentLesson = page === "lesson" || quizStarted ? currentLesson : null;
+  const pageChanged = currentPage !== page;
+  currentPage = page;
   Object.entries(PAGE_IDS).forEach(([name, id]) => {
     document.querySelector(`#${id}`).classList.toggle("active", name === page);
   });
@@ -1073,7 +1212,67 @@ function showPage(page) {
   if (page === "home") renderHome();
   if (page === "lessons") renderLessons();
   if (page === "progress") renderProgress();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (page === "lesson" && (pageChanged || !document.querySelector("#lessonDetail").hasChildNodes())) {
+    renderLesson(currentLesson);
+  }
+  if (page === "theory" && (pageChanged || !document.querySelector("#theoryDetail").hasChildNodes())) {
+    renderTheoryPage(currentLesson);
+  }
+  if (page === "exercises" && (pageChanged || !document.querySelector("#exerciseDetail").hasChildNodes())) {
+    renderExercisePage(currentLesson);
+  }
+  if (scrollToTop) window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function navigateToHash(hash) {
+  if (window.location.hash === hash) {
+    renderCurrentRoute();
+    return;
+  }
+  window.location.hash = hash;
+}
+
+function renderCurrentRoute() {
+  const parts = window.location.hash.slice(1).split("/");
+  if (parts[0] === "lesson") {
+    const lesson = physicsLessons.find(item => encodeURIComponent(item.id) === parts[1]);
+    const destination = parts[2] || "";
+    const validLessonRoute = lesson && (
+      (parts.length === 2 && destination === "") ||
+      (parts.length === 3 && (destination === "theory" || destination === "exercises")) ||
+      (parts.length === 4 && destination === "theory")
+    );
+    if (!validLessonRoute) {
+      showNotice("Không tìm thấy bài học hoặc mục này. Hãy chọn một chủ đề trong thư viện.");
+      navigateToHash("#lessons");
+      return;
+    }
+
+    initializeLesson(lesson);
+    const page = destination === "theory" ? "theory" : destination === "exercises" ? "exercises" : "lesson";
+    activatePage(page, parts.length !== 4);
+    if (page === "theory" && parts[3]) {
+      const section = document.getElementById(parts[3]);
+      if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    return;
+  }
+
+  if (parts.length === 1 && ["home", "lessons", "progress"].includes(parts[0])) {
+    activatePage(parts[0]);
+    return;
+  }
+  if (!window.location.hash) {
+    activatePage("home");
+    return;
+  }
+  showNotice("Đường dẫn không hợp lệ. Đã quay về thư viện bài học.");
+  navigateToHash("#lessons");
+}
+
+function showPage(page) {
+  if (!["home", "lessons", "progress"].includes(page)) return;
+  navigateToHash(`#${page}`);
 }
 
 function openLesson(id) {
@@ -1082,23 +1281,7 @@ function openLesson(id) {
     showNotice("Không tìm thấy bài học này. Hãy chọn một chủ đề trong thư viện.");
     return;
   }
-  if (quizStarted && currentLesson && currentLesson.id === id) {
-    document.querySelector("#lessonPage").classList.add("active");
-    setActiveNavigation("lesson");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
-  if (quizStarted) submitQuiz();
-  stopMotion();
-  progress.recent = [id, ...progress.recent.filter(recentId => recentId !== id)].slice(0, 5);
-  saveProgress();
-  currentLesson = lesson;
-  renderLesson(lesson);
-  Object.entries(PAGE_IDS).forEach(([name, pageId]) => {
-    document.querySelector(`#${pageId}`).classList.toggle("active", name === "lesson");
-  });
-  setActiveNavigation("lesson");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  navigateToHash(lessonRoute(lesson));
 }
 
 function stopQuizTimer() {
@@ -1112,7 +1295,9 @@ function startQuiz() {
   stopQuizTimer();
   quizTimeRemaining = QUIZ_DURATION_SECONDS;
   quizTimedOut = false;
-  quizDeadline = Date.now() + QUIZ_DURATION_SECONDS * 1000;
+  quizStartedAt = Date.now();
+  quizDeadline = quizStartedAt + QUIZ_DURATION_SECONDS * 1000;
+  quizElapsedSeconds = 0;
   quizStarted = true;
   document.querySelector("#quizContainer").innerHTML = renderQuiz(currentLesson);
   updateQuizTimerDisplay();
@@ -1130,7 +1315,11 @@ function startQuiz() {
 
 function submitQuiz(timedOut = false) {
   if (!currentLesson || !quizStarted || quizScore !== null) return;
+  quizElapsedSeconds = timedOut
+    ? QUIZ_DURATION_SECONDS
+    : Math.min(QUIZ_DURATION_SECONDS, Math.floor((Date.now() - quizStartedAt) / 1000));
   stopQuizTimer();
+  quizStartedAt = null;
   quizStarted = false;
   quizTimedOut = timedOut;
 
@@ -1155,7 +1344,7 @@ function submitQuiz(timedOut = false) {
   renderLibraryProgress();
   if (document.querySelector("#progressPage").classList.contains("active")) renderProgress();
   document.querySelector("#quizResultTitle").focus();
-  if (timedOut && !document.querySelector("#lessonPage").classList.contains("active")) {
+  if (timedOut && !document.querySelector("#exercisePage").classList.contains("active")) {
     showNotice(`Hết giờ. Kết quả bài tập: ${formatNumber(quizScore)}/10 điểm.`);
   }
 }
@@ -1172,6 +1361,8 @@ function resetQuiz() {
   quizStarted = false;
   quizTimedOut = false;
   quizTimeRemaining = QUIZ_DURATION_SECONDS;
+  quizStartedAt = null;
+  quizElapsedSeconds = 0;
   document.querySelector("#quizContainer").innerHTML = renderQuiz(currentLesson);
   document.querySelector("[data-start-quiz]").focus();
 }
@@ -1179,9 +1370,31 @@ function resetQuiz() {
 function stopMotion() {
   if (motionFrame !== null) window.cancelAnimationFrame(motionFrame);
   motionFrame = null;
-  motionStartTimestamp = null;
+  motionLastTimestamp = null;
+  if (motionState === "running") motionState = "paused";
+  updateMotionControls();
+}
+
+function updateMotionControls() {
   const playButton = document.querySelector("[data-simulation-play]");
-  if (playButton) playButton.textContent = "▶ Chạy mô phỏng";
+  const resetButton = document.querySelector("[data-simulation-reset]");
+  const timeInput = document.querySelector('[data-sim-input="time"]');
+  const motionVisual = document.querySelector(".sim-motion");
+  const result = document.querySelector(".simulation-card[data-sim-type=\"motion\"] .sim-result");
+  const status = document.querySelector("[data-simulation-status]");
+  const labels = {
+    idle: ["▶ Chạy mô phỏng", "Sẵn sàng mô phỏng."],
+    running: ["Ⅱ Tạm dừng", "Mô phỏng đang chạy."],
+    paused: ["▶ Tiếp tục", "Mô phỏng đang tạm dừng."],
+    completed: ["▶ Chạy lại mô phỏng", "Đã hoàn thành hành trình."]
+  };
+  const [buttonLabel, statusLabel] = labels[motionState];
+  if (playButton) playButton.textContent = buttonLabel;
+  if (resetButton) resetButton.disabled = false;
+  if (timeInput) timeInput.disabled = motionState === "running";
+  if (motionVisual) motionVisual.dataset.motionState = motionState;
+  if (result) result.setAttribute("aria-live", motionState === "running" ? "off" : "polite");
+  if (status && status.textContent !== statusLabel) status.textContent = statusLabel;
 }
 
 function animateMotion(timestamp) {
@@ -1190,29 +1403,66 @@ function animateMotion(timestamp) {
     stopMotion();
     return;
   }
-  if (motionStartTimestamp === null) motionStartTimestamp = timestamp;
-  const elapsed = (timestamp - motionStartTimestamp) / 1000;
-  timeInput.value = Math.min(Number(timeInput.max), elapsed).toString();
+  if (motionLastTimestamp === null) {
+    motionLastTimestamp = timestamp;
+  } else {
+    motionElapsed += Math.max(0, timestamp - motionLastTimestamp) / 1000;
+    motionLastTimestamp = timestamp;
+  }
+  motionElapsed = Math.min(motionDuration, motionElapsed);
+  timeInput.value = motionElapsed.toString();
   updateSimulation();
-  if (Number(timeInput.value) >= Number(timeInput.max)) {
-    stopMotion();
+  if (motionElapsed >= motionDuration) {
+    motionFrame = null;
+    motionLastTimestamp = null;
+    motionState = "completed";
+    timeInput.step = motionTimeStep;
+    updateMotionControls();
     return;
   }
   motionFrame = window.requestAnimationFrame(animateMotion);
 }
 
 function toggleMotion() {
-  if (motionFrame !== null) {
+  if (motionState === "running") {
     stopMotion();
     return;
   }
   const timeInput = document.querySelector('[data-sim-input="time"]');
   if (!timeInput) return;
-  timeInput.value = "0";
-  motionStartTimestamp = null;
-  const playButton = document.querySelector("[data-simulation-play]");
-  playButton.textContent = "Ⅱ Tạm dừng";
+  if (motionState !== "paused") {
+    motionElapsed = 0;
+    timeInput.step = "any";
+    timeInput.value = "0";
+  }
+  if (motionDuration === 0) {
+    motionElapsed = 0;
+    timeInput.value = "0";
+    motionState = "completed";
+    timeInput.step = motionTimeStep;
+    updateSimulation();
+    updateMotionControls();
+    return;
+  }
+  motionLastTimestamp = null;
+  motionState = "running";
+  updateMotionControls();
   motionFrame = window.requestAnimationFrame(animateMotion);
+}
+
+function resetMotion() {
+  if (motionFrame !== null) window.cancelAnimationFrame(motionFrame);
+  motionFrame = null;
+  motionElapsed = 0;
+  motionLastTimestamp = null;
+  motionState = "idle";
+  const timeInput = document.querySelector('[data-sim-input="time"]');
+  if (timeInput) {
+    timeInput.step = motionTimeStep;
+    timeInput.value = "0";
+  }
+  updateSimulation();
+  updateMotionControls();
 }
 
 document.addEventListener("click", event => {
@@ -1331,11 +1581,25 @@ document.addEventListener("click", event => {
     return;
   }
   if (target.closest("[data-simulation-play]")) toggleMotion();
+  if (target.closest("[data-simulation-reset]")) resetMotion();
 });
 
 document.addEventListener("input", event => {
   const target = event.target;
   if (target instanceof HTMLInputElement && target.id === "lessonSearch") renderLessons();
+  if (target instanceof HTMLInputElement && target.matches('[data-sim-input="time"]') && motionState !== "running") {
+    if (motionState === "paused") {
+      motionElapsed = Math.min(motionDuration, Number(target.value));
+      target.value = motionElapsed.toString();
+    } else {
+      motionDuration = Number(target.value);
+      motionElapsed = 0;
+      motionLastTimestamp = null;
+      motionState = "idle";
+      target.step = motionTimeStep;
+      updateMotionControls();
+    }
+  }
   if (target instanceof HTMLInputElement && target.matches("[data-sim-input]")) updateSimulation(target.closest(".simulation-card"));
   if (target instanceof HTMLInputElement && target.matches("[data-short-answer-index]") && quizScore === null) {
     quizAnswers.shortAnswer[Number(target.dataset.shortAnswerIndex)] = target.value;
@@ -1345,12 +1609,8 @@ document.addEventListener("input", event => {
   }
 });
 
-document.addEventListener("change", event => {
-  const target = event.target;
-  if (target instanceof HTMLInputElement && target.matches('[data-sim-input="time"]') && motionFrame !== null) {
-    stopMotion();
-    updateSimulation();
-  }
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && motionState === "running") stopMotion();
 });
 
 document.querySelector("#loginForm").addEventListener("submit", async event => {
@@ -1382,8 +1642,7 @@ document.querySelector("#authDialog").addEventListener("keydown", event => {
   }
 });
 
-renderHome();
 renderFilters();
-renderLessons();
-renderProgress();
 initializeAuth();
+window.addEventListener("hashchange", renderCurrentRoute);
+renderCurrentRoute();

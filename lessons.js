@@ -38,7 +38,7 @@ const physicsLessons = [
       ],
       answer: "Đây là phương pháp thực nghiệm: quan sát, đề xuất giả thuyết, kiểm tra bằng phép đo rồi kết luận."
     },
-    simulation: "motion",
+    simulation: null,
     questions: [
       { question: "Vật lí tập trung nghiên cứu:", options: ["Chỉ các sinh vật sống", "Vật chất, năng lượng và sự tương tác giữa chúng", "Chỉ các phản ứng hóa học", "Chỉ lịch sử xã hội"], correct: 1, explanation: "Vật lí nghiên cứu các dạng vận động của vật chất, năng lượng và sự tương tác giữa chúng." },
       { question: "Đặc điểm nổi bật của Vật lí cổ điển từ thế kỉ XVII là:", options: ["Chỉ giải thích bằng cảm tính", "Phát triển phương pháp thực nghiệm", "Chưa có quan sát tự nhiên", "Chỉ nghiên cứu trí tuệ nhân tạo"], correct: 1, explanation: "Vật lí cổ điển gắn với sự phát triển của phương pháp thực nghiệm, tiêu biểu là Galileo và Newton." },
@@ -102,6 +102,54 @@ const physicsLessons = [
       "Làm theo cho phép và quy trình của giáo viên; sử dụng bảo hộ phù hợp.",
       "Tránh chạm thiết bị nóng, thủy tinh vỡ và không chiếu laser vào mắt.",
       "Tắt nguồn trước khi tháo mạch; báo ngay hư hỏng hoặc sự cố."
+    ]
+  },
+  {
+    id: "displacement-distance",
+    category: "Chuyển động",
+    level: "Lớp 10 · Kết nối tri thức",
+    duration: "20 phút",
+    icon: "↗️",
+    title: "Bài 4: Độ dịch chuyển và quãng đường đi được",
+    summary: "Phân biệt quãng đường với độ dịch chuyển và vận dụng vectơ để mô tả chuyển động.",
+    intro: "Khi mô tả chuyển động, quãng đường ghi nhận toàn bộ độ dài đường đi, còn độ dịch chuyển nối vị trí đầu với vị trí cuối và có hướng. Hai đại lượng này có thể bằng nhau hoặc rất khác nhau tùy hành trình.",
+    objectives: [
+      "Phân biệt quãng đường đi được với độ dịch chuyển.",
+      "Xác định độ dịch chuyển từ vị trí đầu, vị trí cuối và chiều chuyển động.",
+      "Tính quãng đường trên đường gấp khúc hoặc hành trình đổi chiều.",
+      "Dùng hệ tọa độ và vectơ để mô tả vị trí, hướng chuyển động."
+    ],
+    core: [
+      { title: "Quãng đường phụ thuộc toàn bộ đường đi", text: "Quãng đường là tổng độ dài các đoạn đường vật đã đi. Đây là đại lượng vô hướng và không giảm khi vật đổi chiều." },
+      { title: "Độ dịch chuyển nối đầu và cuối", text: "Độ dịch chuyển là vectơ từ vị trí ban đầu đến vị trí cuối cùng. Độ lớn của nó không vượt quá quãng đường đã đi." },
+      { title: "Đường thẳng và đổi chiều", text: "Nếu vật đi thẳng một chiều thì quãng đường bằng độ lớn độ dịch chuyển. Khi vật quay lại, quãng đường vẫn cộng cả hai chặng còn độ dịch chuyển chỉ phụ thuộc hai vị trí đầu, cuối." },
+      { title: "Chuyển động trên mặt phẳng", text: "Có thể dùng hệ tọa độ để xác định vị trí. Với hai thành phần độ dịch chuyển vuông góc, độ lớn vectơ tổng hợp được tính bằng định lí Pythagore." }
+    ],
+    nature: "Quãng đường mô tả độ dài quỹ đạo thực tế; độ dịch chuyển mô tả sự thay đổi vị trí có hướng. Cần xác định rõ đại lượng được hỏi trước khi tính.",
+    guideLabel: "Công thức và cách biểu diễn",
+    guideTitle: "Quãng đường và độ dịch chuyển",
+    formulas: [
+      { name: "Quãng đường", formula: "s = tổng độ dài các đoạn đường", note: "Cộng độ dài tất cả các chặng, kể cả khi vật quay lại." },
+      { name: "Độ dịch chuyển trên một trục", formula: "Δx = x₂ − x₁", note: "Dấu của Δx biểu thị chiều; độ lớn là |Δx|." },
+      { name: "Hai thành phần vuông góc", formula: "d = √(Δx² + Δy²)", note: "Độ lớn vectơ độ dịch chuyển được xác định từ hai thành phần vuông góc." }
+    ],
+    practical: "Khi xem bản đồ đường đi, tổng quãng đường đi theo các phố có thể dài hơn nhiều so với khoảng cách thẳng nối điểm xuất phát và điểm đến.",
+    example: {
+      problem: "Một người đi 6 km về phía Bắc rồi 8 km về phía Đông. Quãng đường và độ lớn độ dịch chuyển là bao nhiêu?",
+      steps: [
+        "Quãng đường bằng tổng hai chặng: 6 + 8 = 14 km.",
+        "Hai hướng vuông góc nên độ lớn độ dịch chuyển là √(6² + 8²).",
+        "Tính được độ dịch chuyển bằng 10 km."
+      ],
+      answer: "Quãng đường 14 km; độ lớn độ dịch chuyển 10 km."
+    },
+    simulation: null,
+    questions: [],
+    summaryPoints: [
+      "Quãng đường là tổng độ dài đường đi; độ dịch chuyển là vectơ nối vị trí đầu và cuối.",
+      "Độ lớn độ dịch chuyển luôn nhỏ hơn hoặc bằng quãng đường.",
+      "Vật đi thẳng một chiều thì quãng đường bằng độ lớn độ dịch chuyển.",
+      "Các thành phần vuông góc được tổng hợp bằng định lí Pythagore."
     ]
   }
 ];

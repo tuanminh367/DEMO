@@ -336,6 +336,13 @@ main { min-height: calc(100vh - 82px); }
 .lesson-banner-icon { width: 104px; height: 104px; flex: none; border-radius: 28px; display: grid; place-items: center; background: rgba(28, 41, 64, .82); font-size: 54px; box-shadow: 0 14px 30px rgba(0, 0, 0, .18); }
 .lesson-layout { display: grid; grid-template-columns: minmax(0, 1fr) 210px; align-items: start; gap: 26px; margin-top: 24px; }
 .lesson-content { min-width: 0; }
+.lesson-entry-list { display: grid; gap: 0; }
+.lesson-entry-card { display: block; color: inherit; text-decoration: none; transition: border-color .2s, transform .2s; }
+.lesson-entry-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+.lesson-entry-card h2 { margin: 5px 0 7px; font: 900 23px/1.3 "Nunito", sans-serif; }
+.lesson-entry-card p { margin: 0 0 14px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.lesson-entry-card > strong { color: var(--blue); font-size: 13px; }
+.lesson-entry-card > strong span { margin-left: 4px; }
 .lesson-theory { min-width: 0; scroll-margin-top: 100px; }
 .learning-area-heading { margin-bottom: 18px; padding: 21px 24px; border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(125deg, rgba(59, 130, 246, .12), rgba(34, 211, 238, .035) 65%), var(--surface); }
 .learning-area-heading h2 { margin: 4px 0 6px; font: 900 28px/1.25 "Nunito", sans-serif; }
@@ -382,13 +389,20 @@ main { min-height: calc(100vh - 82px); }
 .sim-visual { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
 .sim-visual > span { font-size: 34px; }
 .sim-visual small { color: var(--muted); font-size: 10px; text-align: center; }
-.sim-motion { grid-column: 1 / -1; display: flex; align-items: center; padding: 16px; }
+.sim-motion { grid-column: 1 / -1; display: grid; align-content: center; gap: 18px; padding: 18px 16px; }
 .simulation-card[data-sim-type="motion"] .sim-result { grid-column: 1 / -1; grid-row: auto; }
 .sim-track { position: relative; width: 100%; height: 4px; border-radius: 4px; background: linear-gradient(90deg, #155E75, var(--cyan)); }
 .sim-track-start, .sim-track-end { position: absolute; top: 10px; color: var(--muted); font-size: 10px; }
 .sim-track-start { left: 0; }
 .sim-track-end { right: 0; }
-.sim-motion-marker { position: absolute; top: 50%; left: 0; color: var(--blue-dark); font-size: 24px; line-height: 1; transform: translate(-50%, -50%); transition: left .14s linear; }
+.sim-track::before, .sim-track::after { position: absolute; top: 50%; width: 8px; height: 8px; border: 2px solid #10192A; border-radius: 50%; background: var(--cyan); content: ""; transform: translate(-50%, -50%); }
+.sim-track::before { left: 0; }
+.sim-track::after { left: 100%; }
+.sim-motion-marker { position: absolute; top: 50%; left: 0; width: 100%; height: 0; transform: translate3d(var(--motion-progress, 0%), 0, 0); will-change: transform; }
+.sim-motion-marker > span { position: absolute; top: 0; left: 0; color: var(--cyan); font-size: 24px; line-height: 1; text-shadow: 0 0 10px rgba(34, 211, 238, .4); transform: translate(-50%, -50%); }
+.sim-motion[data-motion-state="running"] .sim-motion-marker > span { animation: motion-marker-pulse 1.8s ease-in-out infinite; }
+.sim-motion-status { margin: 0; color: var(--muted); font-size: 10px; }
+.sim-motion-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .wave-visual { width: 100%; height: 100px; padding: 10px; }
 .wave-visual line { stroke: var(--line); stroke-width: 1; stroke-dasharray: 4 4; }
 .wave-visual path { fill: none; stroke: var(--cyan); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
@@ -404,7 +418,11 @@ main { min-height: calc(100vh - 82px); }
 .sim-result > strong { margin-top: 4px; color: var(--cyan); font: 900 22px "Nunito", sans-serif; }
 .sim-result p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
 .sim-result code { padding: 4px 6px; align-self: flex-start; font-size: 10px; }
-.sim-play-button { grid-column: 1 / -1; justify-self: start; min-height: 38px; font-size: 12px; }
+.sim-play-button, .sim-reset-button { min-height: 38px; font-size: 12px; }
+.sim-reset-button:disabled { cursor: not-allowed; opacity: .5; }
+@keyframes motion-marker-pulse {
+  50% { text-shadow: 0 0 14px rgba(34, 211, 238, .65); }
+}
 .quiz-start-card { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-hover); }
 .quiz-start-icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 16px; background: var(--blue-pale); color: var(--cyan); font-size: 27px; }
 .quiz-start-copy h3, .quiz-attempt-status h3 { margin: 4px 0; font: 900 19px/1.35 "Nunito", sans-serif; }
@@ -432,6 +450,9 @@ main { min-height: calc(100vh - 82px); }
 .quiz-question legend { width: 100%; padding: 0; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.75; }
 .quiz-question legend span { display: block; margin-bottom: 4px; color: var(--blue); font-size: 10px; font-weight: 800; text-transform: uppercase; }
 .quiz-question:disabled { opacity: 1; }
+.quiz-illustration { max-width: 520px; margin: 14px auto 4px; padding: 10px; border: 1px solid var(--line); border-radius: 11px; background: #10192A; }
+.quiz-figure { display: block; width: 100%; height: auto; }
+.quiz-illustration figcaption { margin-top: 5px; color: var(--muted); font-size: 11px; text-align: center; }
 .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 11px; }
 .quiz-option { min-height: 48px; display: flex; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-hover); color: #CBD5E1; text-align: left; font-size: 14px; line-height: 1.6; }
 .quiz-option:hover:not(:disabled) { border-color: var(--blue-dark); background: #24344D; }
@@ -467,6 +488,10 @@ main { min-height: calc(100vh - 82px); }
 .quiz-result { margin-top: 16px; padding: 16px; border: 1px solid rgba(52, 211, 153, .24); border-radius: 13px; background: var(--green-pale); }
 .quiz-result h3 { margin: 0; color: var(--green); font: 900 24px/1.3 "Nunito", sans-serif; }
 .quiz-result > p { margin: 5px 0 12px; color: #A7F3D0; font-size: 14px; line-height: 1.7; }
+.quiz-result-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; }
+.quiz-result-stats > div { display: grid; gap: 4px; padding: 10px; border: 1px solid rgba(52, 211, 153, .2); border-radius: 9px; background: rgba(11, 17, 32, .35); }
+.quiz-result-stats span { color: #A7F3D0; font-size: 11px; }
+.quiz-result-stats strong { color: var(--green); font: 900 17px "Nunito", sans-serif; font-variant-numeric: tabular-nums; }
 .answer-explanations { display: grid; gap: 8px; }
 .answer-explanations h4 { margin: 9px 0 0; color: var(--green); font: 800 14px "Nunito", sans-serif; }
 .answer-explanation { padding: 10px; border: 1px solid rgba(52, 211, 153, .18); border-radius: 9px; background: rgba(11, 17, 32, .56); }
